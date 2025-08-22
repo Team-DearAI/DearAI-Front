@@ -14,12 +14,27 @@ export const Backdrop = styled.div`
 
 export const Container = styled.div`
     background: white;
-    padding: 24px;
-    border-radius: 12px;
-    width: 400px;
-    max-width: 90%;
+    padding: 40px 60px;
+    border-radius: 20px;
+    width: 30vw;
+    min-width: 320px;
+    max-width: 800px;
+    font-family: "Pretendard", sans-serif;
+
+    @media (max-width: 319px) {
+        /* Screen width less than 320px */
+        /* Warning message should be handled in Modal.tsx */
+    }
+
+    height: 80vh;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
     position: relative;
+    margin: 0 16px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+
+    border: 3px solid #82e0bb;
 `;
 
 export const Header = styled.header`
@@ -31,8 +46,17 @@ export const Header = styled.header`
     align-items: center;
 `;
 
+export const Logo = styled.img`
+    width: 32px;
+    margin-right: 8px;
+`;
+
+export const WhiteLogo = styled(Logo)`
+    filter: brightness(0) invert(1);
+`;
+
 export const Section = styled.section`
-    margin-bottom: 16px;
+    margin-bottom: 24px;
 `;
 
 export const Label = styled.label`
@@ -40,14 +64,20 @@ export const Label = styled.label`
     font-size: 0.9rem;
     font-weight: 600;
     margin-bottom: 6px;
+    font-family: "Pretendard", sans-serif;
 `;
 
 export const Input = styled.input`
     width: 100%;
     padding: 8px 12px;
     font-size: 0.95rem;
-    border-radius: 6px;
+    border-radius: 12px;
     border: 1px solid #ccc;
+    font-family: "Pretendard", sans-serif;
+
+    &::placeholder {
+        font-family: "Pretendard", sans-serif;
+    }
 `;
 
 export const Textarea = styled.textarea`
@@ -55,9 +85,14 @@ export const Textarea = styled.textarea`
     height: 100px;
     padding: 8px 12px;
     font-size: 0.95rem;
-    border-radius: 6px;
+    border-radius: 12px;
     border: 1px solid #ccc;
     resize: vertical;
+    font-family: "Pretendard", sans-serif;
+
+    &::placeholder {
+        font-family: "Pretendard", sans-serif;
+    }
 `;
 
 export const Footer = styled.footer`
@@ -70,7 +105,7 @@ export const Button = styled.button`
     background-color: #3182ce;
     color: white;
     border: none;
-    border-radius: 6px;
+    border-radius: 12px;
     cursor: pointer;
 
     &:hover {
@@ -84,11 +119,158 @@ export const CloseButton = styled.button`
     right: 16px;
     background: transparent;
     border: none;
-    font-size: 1.2rem;
+    font-size: 1.5rem;
+    font-family: "DungGeunMo", cursive;
     cursor: pointer;
-    color: #999;
+    color: #82e0bb;
 
     &:hover {
-        color: #333;
+        color: #66c8a3;
     }
+`;
+
+export const RecipientSelect = styled.select`
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    margin-right: 8px;
+    font-family: "Pretendard", sans-serif;
+`;
+
+export const SmallGreenButton = styled.button`
+    padding: 8px 12px;
+    background-color: #82e0bb;
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+    cursor: pointer;
+    margin-right: 6px;
+    font-family: "Pretendard", sans-serif;
+
+    &:last-child {
+        margin-right: 0;
+    }
+`;
+
+export const InfoButton = styled.button`
+    background: none;
+    border: none;
+    color: #82e0bb;
+    font-size: 1.2rem;
+    cursor: pointer;
+    font-family: "Pretendard", sans-serif;
+`;
+
+export const CheckboxLabel = styled.label`
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.9rem;
+    font-family: "Pretendard", sans-serif;
+`;
+
+export const LanguageSelect = styled.select`
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 0.9rem;
+    font-family: "Pretendard", sans-serif;
+`;
+
+export const NavButton = styled.button`
+    padding: 6px 10px;
+    margin-right: 6px;
+    border-radius: 6px;
+    border: none;
+    background-color: #ccc;
+    cursor: pointer;
+    font-family: "Pretendard", sans-serif;
+`;
+
+export const ResultButton = styled.button`
+    padding: 8px 16px;
+    background-color: #82e0bb;
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+    cursor: pointer;
+    font-family: "Pretendard", sans-serif;
+`;
+
+export const KeywordTag = styled.span`
+    background-color: #eee;
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: "Pretendard", sans-serif;
+`;
+
+export const TagDeleteButton = styled.button`
+    background: none;
+    border: none;
+    font-size: 0.9rem;
+    cursor: pointer;
+    font-family: "Pretendard", sans-serif;
+`;
+
+export const AddKeywordButton = styled.button`
+    padding: 0 12px;
+    font-size: 1.2rem;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    background: none;
+    cursor: pointer;
+    font-family: "Pretendard", sans-serif;
+`;
+
+export const FinalButton = styled(Button)`
+    background-color: #82e0bb;
+    padding: 12px 24px;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: "Pretendard", sans-serif;
+`;
+
+export const CarIcon = styled.img`
+    width: 20px;
+`;
+
+export const WarningMessage = styled.div`
+    background-color: #ffe0e0;
+    color: #c00;
+    padding: 8px;
+    text-align: center;
+    border-radius: 12px;
+    margin-bottom: 8px;
+`;
+
+export const Row = styled.div`
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+`;
+
+export const CheckboxGroup = styled.div`
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+`;
+
+export const NavButtonGroup = styled.div`
+    display: flex;
+    justify-content: space-between;
+    margin-top: 12px;
+`;
+
+export const TagGroup = styled.div`
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
 `;
