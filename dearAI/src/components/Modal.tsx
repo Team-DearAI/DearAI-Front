@@ -105,20 +105,25 @@ export const Modal = () => {
                                 {label}
                             </CheckboxLabel>
                         ))}
-                        <div style={{ marginLeft: "auto" }}>
-                            <LanguageSelect>
-                                <option disabled selected>
-                                    언어 선택
-                                </option>
-                                <option>한국어</option>
-                                <option>영어</option>
-                            </LanguageSelect>
-                        </div>
                     </CheckboxGroup>
                 </Section>
 
                 <Section>
-                    <Label>내용</Label>
+                    <Row
+                        style={{
+                            alignItems: "flex-end",
+                            justifyContent: "space-between",
+                        }}
+                    >
+                        <Label>내용</Label>
+                        <LanguageSelect style={{ width: "120px" }}>
+                            <option disabled selected>
+                                언어 선택
+                            </option>
+                            <option>한국어</option>
+                            <option>영어</option>
+                        </LanguageSelect>
+                    </Row>
                     <Textarea placeholder="메일 본문 작성" />
                 </Section>
 
