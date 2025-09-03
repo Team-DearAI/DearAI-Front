@@ -101,7 +101,7 @@ export const Modal = () => {
                             "감성적인",
                         ].map((label, idx) => (
                             <CheckboxLabel key={idx}>
-                                <input type="checkbox" />
+                                <input type="radio" name="tone" />
                                 {label}
                             </CheckboxLabel>
                         ))}

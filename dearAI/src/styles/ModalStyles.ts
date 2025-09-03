@@ -16,9 +16,7 @@ export const Container = styled.div`
     background: white;
     padding: 40px 60px;
     border-radius: 20px;
-    width: 30vw;
-    min-width: 320px;
-    max-width: 800px;
+    width: 480px;
     font-family: "Pretendard", sans-serif;
 
     @media (max-width: 319px) {
@@ -26,7 +24,7 @@ export const Container = styled.div`
         /* Warning message should be handled in Modal.tsx */
     }
 
-    height: 80vh;
+    height: auto;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
     position: relative;
     margin: 0 16px;
@@ -41,14 +39,14 @@ export const Header = styled.header`
     font-size: 1.8rem;
     font-family: "DungGeunMo", cursive;
     color: #82e0bb;
-    margin-bottom: 16px;
+    margin-bottom: 24px;
     display: flex;
     align-items: center;
 `;
 
 export const Logo = styled.img`
     width: 32px;
-    margin-right: 8px;
+    margin-right: 12px;
 `;
 
 export const WhiteLogo = styled(Logo)`
@@ -56,7 +54,7 @@ export const WhiteLogo = styled(Logo)`
 `;
 
 export const Section = styled.section`
-    margin-bottom: 24px;
+    margin-bottom: 16px;
 `;
 
 export const Label = styled.label`
@@ -68,7 +66,7 @@ export const Label = styled.label`
 `;
 
 export const Input = styled.input`
-    width: 100%;
+    width: 96%;
     padding: 8px 12px;
     font-size: 0.95rem;
     border-radius: 12px;
@@ -81,13 +79,13 @@ export const Input = styled.input`
 `;
 
 export const Textarea = styled.textarea`
-    width: 100%;
-    height: 100px;
+    width: 96%;
+    height: 140px;
     padding: 8px 12px;
     font-size: 0.95rem;
     border-radius: 12px;
     border: 1px solid #ccc;
-    resize: vertical;
+    resize: none;
     font-family: "Pretendard", sans-serif;
 
     &::placeholder {
@@ -132,7 +130,7 @@ export const CloseButton = styled.button`
 export const RecipientSelect = styled.select`
     flex: 1;
     padding: 8px 12px;
-    border-radius: 6px;
+    border-radius: 12px;
     border: 1px solid #ccc;
     margin-right: 8px;
     font-family: "Pretendard", sans-serif;
@@ -165,14 +163,41 @@ export const InfoButton = styled.button`
 export const CheckboxLabel = styled.label`
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 8px;
     font-size: 0.9rem;
     font-family: "Pretendard", sans-serif;
+    cursor: pointer;
+
+    input[type="radio"] {
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        border: 1.5px solid #ccc;
+        border-radius: 4px;
+        position: relative;
+        cursor: pointer;
+        outline: none;
+    }
+
+    input[type="radio"]:checked {
+        background-color: #82e0bb;
+        border-color: #68d7ab;
+    }
+
+    input[type="radio"]:checked::before {
+        content: "✔";
+        color: white;
+        position: absolute;
+        top: 0;
+        left: 3px;
+        font-size: 14px;
+        line-height: 18px;
+    }
 `;
 
 export const LanguageSelect = styled.select`
     padding: 8px;
-    border-radius: 6px;
+    border-radius: 12px;
     border: 1px solid #ccc;
     font-size: 0.9rem;
     font-family: "Pretendard", sans-serif;
@@ -181,7 +206,7 @@ export const LanguageSelect = styled.select`
 export const NavButton = styled.button`
     padding: 6px 10px;
     margin-right: 6px;
-    border-radius: 6px;
+    border-radius: 12px;
     border: none;
     background-color: #ccc;
     cursor: pointer;
@@ -260,7 +285,7 @@ export const CheckboxGroup = styled.div`
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-top: 8px;
+    margin-top: 20px;
 `;
 
 export const NavButtonGroup = styled.div`
