@@ -167,3 +167,5 @@ export const Modal = () => {
         </Backdrop>
     );
 };
+
+export default Modal;
