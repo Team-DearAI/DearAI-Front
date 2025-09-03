@@ -208,9 +208,15 @@ export const NavButton = styled.button`
     margin-right: 6px;
     border-radius: 12px;
     border: none;
-    background-color: #ccc;
+    background-color: #d9d9d9;
+    color: #ffffff;
     cursor: pointer;
-    font-family: "Pretendard", sans-serif;
+    font-family: "Pretendard";
+    font-weight: 700;
+
+    &:hover {
+        background-color: #bfbfbf;
+    }
 `;
 
 export const ResultButton = styled.button`
