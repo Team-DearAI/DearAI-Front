@@ -1,12 +1,13 @@
 import React from "react";
-import { Modal } from "./components/Modal";
+import Login from "./components/Login";
 
 const App = () => {
-    const isLoggedIn = true; // 나중에 로직으로 바꿔도 됨
+    const [isLoggedIn, setIsLoggedIn] = React.useState(false);
 
     return (
         <div className="App">
-            {isLoggedIn ? <Modal /> : <p>로그인이 필요합니다.</p>}
+            {!isLoggedIn && <Login onClose={() => setIsLoggedIn(true)} />}
+            {isLoggedIn && <p>환영합니다! 로그인 성공 🎉</p>}
         </div>
     );
 };
