@@ -70,7 +70,11 @@ export const Modal = () => {
                             <option>친구1@example.com</option>
                             <option>친구2@example.com</option>
                         </RecipientSelect>
-                        <SmallGreenButton>주소록 보기</SmallGreenButton>
+                        <SmallGreenButton
+                            onClick={() => window.location.assign("/address")}
+                        >
+                            주소록 보기
+                        </SmallGreenButton>
                         <SmallGreenButton>불러오기</SmallGreenButton>
                     </Row>
                 </Section>
