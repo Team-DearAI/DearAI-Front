@@ -24,7 +24,7 @@ export const Container = styled.div`
         /* Warning message should be handled in Modal.tsx */
     }
 
-    height: auto;
+    height: 725px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
     position: relative;
     margin: 0 16px;
