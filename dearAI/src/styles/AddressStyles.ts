@@ -3,7 +3,7 @@ import styled from "styled-components";
 export const ModalContainer = styled.div`
     background: white;
     border-radius: 20px;
-    width: 560px;
+    width: 600px;
     font-family: "Pretendard", sans-serif;
     height: 785px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
