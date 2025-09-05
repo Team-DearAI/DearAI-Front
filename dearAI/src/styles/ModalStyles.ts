@@ -230,32 +230,45 @@ export const ResultButton = styled.button`
 `;
 
 export const KeywordTag = styled.span`
-    background-color: #eee;
-    padding: 6px 12px;
-    border-radius: 16px;
-    font-size: 0.9rem;
+    border: 1px solid #d9d9d9;
+    padding: 6px 16px;
+    border-radius: 10px;
+    font-size: 0.8rem;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     font-family: "Pretendard", sans-serif;
+    color: #d9d9d9;
 `;
 
 export const TagDeleteButton = styled.button`
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    border: 1px solid #d9d9d9;
     background: none;
-    border: none;
-    font-size: 0.9rem;
+    color: #d9d9d9;
+    font-size: 0.85rem;
+    font-weight: normal;
     cursor: pointer;
-    font-family: "Pretendard", sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 `;
 
 export const AddKeywordButton = styled.button`
-    padding: 0 12px;
-    font-size: 1.2rem;
-    border-radius: 4px;
-    border: 1px solid #ccc;
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+    border-radius: 10px;
+    border: 1px solid #d9d9d9;
     background: none;
     cursor: pointer;
+    color: #d9d9d9;
     font-family: "Pretendard", sans-serif;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
 `;
 
 export const FinalButton = styled(Button)`
