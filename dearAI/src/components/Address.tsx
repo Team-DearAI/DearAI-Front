@@ -1,9 +1,6 @@
-import React from "react";
 import { useNavigate } from "react-router-dom";
 import {
     AddressTable,
-    AddressHeader,
-    AddressHeaderCell,
     AddressBody,
     AddressRow,
     AddressCell,
@@ -17,7 +14,6 @@ import {
     Logo,
     CloseButton,
     AddressHeaderBar,
-    SearchContainer,
     InnerContainer,
 } from "../styles/AddressStyles";
 
@@ -55,7 +51,7 @@ export default function Address() {
                         />
                         <Logo>DearAI</Logo>
                     </div>
-                    <CloseButton>x</CloseButton>
+                    <CloseButton onClick={() => navigate(-1)}>x</CloseButton>
                 </HeaderBar>
 
                 <AddressHeaderBar>

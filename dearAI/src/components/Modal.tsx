@@ -8,7 +8,6 @@ import {
     Input,
     Textarea,
     Footer,
-    Button,
     CloseButton,
     Logo,
     RecipientSelect,
@@ -22,7 +21,6 @@ import {
     TagDeleteButton,
     AddKeywordButton,
     FinalButton,
-    CarIcon,
     WarningMessage,
     Row,
     CheckboxGroup,
@@ -161,7 +159,7 @@ export const Modal = () => {
                     </TagGroup>
                 </Section>
 
-                <Footer style={{ justifyContent: "center", marginTop: "16px" }}>
+                <Footer style={{ justifyContent: "center", marginTop: "12px" }}>
                     <FinalButton>
                         <WhiteLogo src="/logo.png" />
                         최종 적용

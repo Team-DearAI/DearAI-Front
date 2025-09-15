@@ -1,6 +1,5 @@
 import { useState } from "react";
 import Modal from "./Modal";
-import React from "react";
 import {
     LoginBackdrop,
     LoginContainer,
@@ -12,12 +11,16 @@ import {
     LogoRow,
 } from "../styles/LoginStyles";
 
-const Login = () => {
+interface LoginProps {
+    onClose: () => void;
+}
+
+const Login: React.FC<LoginProps> = ({ onClose }) => {
     const [showModal, setShowModal] = useState(false);
     return (
         <LoginBackdrop>
             <LoginContainer>
-                <CloseButton onClick={() => {}}>x</CloseButton>
+                <CloseButton onClick={onClose}>x</CloseButton>
                 <LogoRow>
                     <LoginLogo src="/logo.png" alt="logo" />
                     <LoginTitle>DearAI</LoginTitle>

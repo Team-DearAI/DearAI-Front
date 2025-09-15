@@ -11,7 +11,6 @@ export const LogoRow = styled.div`
 export const LoginBackdrop = styled.div`
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.2);
     display: flex;
     justify-content: center;
     align-items: center;

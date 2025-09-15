@@ -6,7 +6,6 @@ export const Backdrop = styled.div`
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.3);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -14,9 +13,10 @@ export const Backdrop = styled.div`
 
 export const Container = styled.div`
     background: white;
-    padding: 40px 60px;
+    padding: 30px 40px;
     border-radius: 20px;
     width: 480px;
+    height: 534px;
     font-family: "Pretendard", sans-serif;
 
     @media (max-width: 319px) {
@@ -24,10 +24,8 @@ export const Container = styled.div`
         /* Warning message should be handled in Modal.tsx */
     }
 
-    height: 725px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
     position: relative;
-    margin: 0 16px;
     display: flex;
     flex-direction: column;
     overflow-y: auto;
@@ -39,14 +37,14 @@ export const Header = styled.header`
     font-size: 1.8rem;
     font-family: "DungGeunMo", cursive;
     color: #82e0bb;
-    margin-bottom: 24px;
+    margin-bottom: 18px;
     display: flex;
     align-items: center;
 `;
 
 export const Logo = styled.img`
-    width: 32px;
-    margin-right: 12px;
+    width: 24px;
+    margin-right: 8px;
 `;
 
 export const WhiteLogo = styled(Logo)`
@@ -54,12 +52,11 @@ export const WhiteLogo = styled(Logo)`
 `;
 
 export const Section = styled.section`
-    margin-bottom: 16px;
+    margin-bottom: 12px;
 `;
 
 export const Label = styled.label`
     display: block;
-    font-size: 0.9rem;
     font-weight: 600;
     margin-bottom: 6px;
     font-family: "Pretendard", sans-serif;
@@ -67,22 +64,23 @@ export const Label = styled.label`
 
 export const Input = styled.input`
     width: 96%;
-    padding: 8px 12px;
-    font-size: 0.95rem;
+    padding: 6px 10px;
+    font-size: 0.9rem;
     border-radius: 12px;
     border: 1px solid #ccc;
     font-family: "Pretendard", sans-serif;
 
     &::placeholder {
         font-family: "Pretendard", sans-serif;
+        font-size: 0.8rem;
     }
 `;
 
 export const Textarea = styled.textarea`
     width: 96%;
-    height: 140px;
-    padding: 8px 12px;
-    font-size: 0.95rem;
+    height: 80px;
+    padding: 6px 10px;
+    font-size: 0.9rem;
     border-radius: 12px;
     border: 1px solid #ccc;
     resize: none;
@@ -90,6 +88,9 @@ export const Textarea = styled.textarea`
 
     &::placeholder {
         font-family: "Pretendard", sans-serif;
+        font-size: 0.8rem;
+        margin-left: 6px;
+        margin-top: 4px;
     }
 `;
 
@@ -113,8 +114,8 @@ export const Button = styled.button`
 
 export const CloseButton = styled.button`
     position: absolute;
-    top: 16px;
-    right: 16px;
+    top: 20px;
+    right: 20px;
     background: transparent;
     border: none;
     font-size: 1.5rem;
@@ -129,22 +130,24 @@ export const CloseButton = styled.button`
 
 export const RecipientSelect = styled.select`
     flex: 1;
-    padding: 8px 12px;
+    padding: 6px 12px;
     border-radius: 12px;
     border: 1px solid #ccc;
+    font-size: 0.8rem;
     margin-right: 8px;
     font-family: "Pretendard", sans-serif;
 `;
 
 export const SmallGreenButton = styled.button`
-    padding: 8px 12px;
+    padding: 10px 9px;
     background-color: #82e0bb;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     color: #fff;
     cursor: pointer;
     margin-right: 6px;
     font-family: "Pretendard", sans-serif;
+    font-size: 0.7rem; // added to reduce text size
 
     &:last-child {
         margin-right: 0;
@@ -196,11 +199,15 @@ export const CheckboxLabel = styled.label`
 `;
 
 export const LanguageSelect = styled.select`
-    padding: 8px;
+    padding: 6px 10px;
     border-radius: 12px;
     border: 1px solid #ccc;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     font-family: "Pretendard", sans-serif;
+
+    &::placeholder {
+        font-size: 0.75rem;
+    }
 `;
 
 export const NavButton = styled.button`
@@ -223,17 +230,18 @@ export const ResultButton = styled.button`
     padding: 8px 16px;
     background-color: #82e0bb;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     color: #fff;
     cursor: pointer;
+    font-size: 0.8rem;
     font-family: "Pretendard", sans-serif;
 `;
 
 export const KeywordTag = styled.span`
     border: 1px solid #d9d9d9;
-    padding: 6px 16px;
+    padding: 6px 12px;
     border-radius: 10px;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -257,8 +265,8 @@ export const TagDeleteButton = styled.button`
 `;
 
 export const AddKeywordButton = styled.button`
-    width: 40px;
-    height: 40px;
+    width: 35px;
+    height: 35px;
     font-size: 1rem;
     border-radius: 10px;
     border: 1px solid #d9d9d9;
@@ -273,12 +281,12 @@ export const AddKeywordButton = styled.button`
 
 export const FinalButton = styled(Button)`
     background-color: #82e0bb;
-    padding: 12px 24px;
-    font-size: 1rem;
+    padding: 10px 16px; // smaller padding
+    font-size: 0.9rem; // smaller font
     display: flex;
     align-items: center;
     gap: 8px;
-    font-family: "Pretendard", sans-serif;
+    font-family: "DungGeunMo", cursive;
 `;
 
 export const CarIcon = styled.img`
@@ -305,6 +313,7 @@ export const CheckboxGroup = styled.div`
     flex-wrap: wrap;
     gap: 8px;
     margin-top: 20px;
+    font-size: 0.85rem;
 `;
 
 export const NavButtonGroup = styled.div`
