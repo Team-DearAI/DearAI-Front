@@ -50,9 +50,7 @@ export const Modal = () => {
                 </WarningMessage>
             )}
             <Container>
-                <CloseButton onClick={() => console.log("close modal")}>
-                    ×
-                </CloseButton>
+                <CloseButton onClick={() => window.close()}>×</CloseButton>
                 <Header>
                     <Logo src="/logo.png" alt="logo" />
                     <span>DearAI</span>

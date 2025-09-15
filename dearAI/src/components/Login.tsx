@@ -11,16 +11,14 @@ import {
     LogoRow,
 } from "../styles/LoginStyles";
 
-interface LoginProps {
-    onClose: () => void;
-}
-
-const Login: React.FC<LoginProps> = ({ onClose }) => {
+const Login: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
     const [showModal, setShowModal] = useState(false);
     return (
         <LoginBackdrop>
             <LoginContainer>
-                <CloseButton onClick={onClose}>x</CloseButton>
+                <CloseButton onClick={() => onClose?.() ?? window.close()}>
+                    x
+                </CloseButton>
                 <LogoRow>
                     <LoginLogo src="/logo.png" alt="logo" />
                     <LoginTitle>DearAI</LoginTitle>
