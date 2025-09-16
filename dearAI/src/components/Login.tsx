@@ -12,7 +12,7 @@ import {
 } from "../styles/LoginStyles";
 
 const Login: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
-    const [showModal, setShowModal] = useState(false);
+    const [showModal] = useState(false);
     return (
         <LoginBackdrop>
             <LoginContainer>
@@ -31,7 +31,30 @@ const Login: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
                 <GoogleLoginImage
                     src="/google.png"
                     alt="Google Login"
-                    onClick={() => setShowModal(true)}
+                    onClick={() => {
+                        const loginWindow = window.open(
+                            "https://dearai.cspark.my/login",
+                            "_blank",
+                            "width=500,height=600"
+                        );
+
+                        const messageListener = (event: MessageEvent) => {
+                            if (event.origin !== "https://dearai.cspark.my")
+                                return;
+
+                            const token = event.data?.token;
+                            if (token) {
+                                console.log("토큰 수신됨:", token);
+                                loginWindow?.close();
+                                window.removeEventListener(
+                                    "message",
+                                    messageListener
+                                );
+                            }
+                        };
+
+                        window.addEventListener("message", messageListener);
+                    }}
                 />
             </LoginContainer>
             {showModal && <Modal />}

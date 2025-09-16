@@ -22,6 +22,7 @@ export const LoginContainer = styled.div`
     border-radius: 16px;
     padding: 40px;
     width: 400px;
+    height: 512px;
     font-family: "Pretendard", sans-serif;
     position: relative;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);

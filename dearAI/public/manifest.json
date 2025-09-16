@@ -7,7 +7,12 @@
         "default_popup": "index.html",
         "default_icon": "logo.png"
     },
-    "permissions": [],
+    "permissions": ["declarativeNetRequest", "storage", "identity"],
+    "host_permissions": [
+        "http://*/*",
+        "https://*/*",
+        "https://people.googleapis.com/*"
+    ],
     "icons": {
         "16": "logo.png",
         "48": "logo.png",
@@ -15,5 +20,9 @@
     },
     "background": {
         "service_worker": "background.js"
+    },
+    "oauth2": {
+        "client_id": "909135863044-padkapm6dass2c87gclan69s6qmt7jlt.apps.googleusercontent.com",
+        "scopes": ["https://www.googleapis.com/auth/userinfo.email"]
     }
 }
