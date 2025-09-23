@@ -23,6 +23,10 @@
     },
     "oauth2": {
         "client_id": "909135863044-padkapm6dass2c87gclan69s6qmt7jlt.apps.googleusercontent.com",
-        "scopes": ["https://www.googleapis.com/auth/userinfo.email"]
+        "scopes": [
+            "https://www.googleapis.com/auth/userinfo.email",
+            "https://www.googleapis.com/auth/userinfo.profile",
+            "https://www.googleapis.com/auth/contacts.readonly"
+        ]
     }
 }

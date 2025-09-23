@@ -32,19 +32,30 @@ const Login: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
                     src="/google.png"
                     alt="Google Login"
                     onClick={() => {
+                        const loginUrl = "https://dearai.cspark.my/login";
+                        console.log("[프런트] 로그인 시도: ", loginUrl);
+
                         const loginWindow = window.open(
-                            "https://dearai.cspark.my/login",
+                            loginUrl,
                             "_blank",
                             "width=500,height=600"
                         );
 
                         const messageListener = (event: MessageEvent) => {
+                            console.log(
+                                "[프런트] message 수신: ",
+                                event.origin,
+                                event.data
+                            );
                             if (event.origin !== "https://dearai.cspark.my")
                                 return;
 
                             const token = event.data?.token;
                             if (token) {
-                                console.log("토큰 수신됨:", token);
+                                console.log(
+                                    "[프런트] 로그인 성공, 토큰:",
+                                    token
+                                );
                                 loginWindow?.close();
                                 window.removeEventListener(
                                     "message",
