@@ -2,16 +2,16 @@ import styled from "styled-components";
 
 export const ModalContainer = styled.div`
     background: white;
-    border-radius: 20px;
-    width: 600px;
+    border-radius: 16px;
+    width: 400px;
     font-family: "Pretendard", sans-serif;
-    height: 785px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    height: 512px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     position: relative;
     margin: 0 16px;
     display: flex;
     flex-direction: column;
-    border: 3px solid #82e0bb;
+    border: 2px solid #82e0bb;
     overflow: hidden;
 `;
 

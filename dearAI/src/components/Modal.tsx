@@ -1,4 +1,12 @@
+declare const chrome: {
+    storage: {
+        local: {
+            clear: (callback?: () => void) => void;
+        };
+    };
+};
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import {
     Backdrop,
     Container,
@@ -29,10 +37,21 @@ import {
     WhiteLogo,
 } from "../styles/ModalStyles";
 
-export const Modal = () => {
+export const Modal: React.FC = () => {
+    const navigate = useNavigate();
     const [isSmallScreen, setIsSmallScreen] = React.useState(
         window.innerWidth < 320
     );
+    const [logoClickCount, setLogoClickCount] = React.useState(0);
+
+    // Optional: Reset click count after a short timeout
+    React.useEffect(() => {
+        if (logoClickCount === 0) return;
+        const timeout = setTimeout(() => {
+            setLogoClickCount(0);
+        }, 1500);
+        return () => clearTimeout(timeout);
+    }, [logoClickCount]);
 
     React.useEffect(() => {
         const handleResize = () => {
@@ -52,7 +71,27 @@ export const Modal = () => {
             <Container>
                 <CloseButton onClick={() => window.close()}>×</CloseButton>
                 <Header>
-                    <Logo src="/logo.png" alt="logo" />
+                    <Logo
+                        src="/logo.png"
+                        alt="logo"
+                        onClick={() => {
+                            setLogoClickCount((prev) => {
+                                const newCount = prev + 1;
+                                if (newCount >= 4) {
+                                    if (chrome?.storage?.local) {
+                                        chrome.storage.local.clear(() => {
+                                            console.log(
+                                                "Logged out via logo clicks"
+                                            );
+                                            window.location.reload();
+                                        });
+                                    }
+                                    return 0;
+                                }
+                                return newCount;
+                            });
+                        }}
+                    />
                     <span>DearAI</span>
                 </Header>
 
@@ -66,9 +105,7 @@ export const Modal = () => {
                             <option>친구1@example.com</option>
                             <option>친구2@example.com</option>
                         </RecipientSelect>
-                        <SmallGreenButton
-                            onClick={() => window.location.assign("/address")}
-                        >
+                        <SmallGreenButton onClick={() => navigate("/address")}>
                             주소록 보기
                         </SmallGreenButton>
                         <SmallGreenButton>불러오기</SmallGreenButton>
