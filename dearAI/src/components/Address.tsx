@@ -1,4 +1,7 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import AddAddress from "./AddAddress";
 import {
     AddressTable,
     AddressBody,
@@ -15,10 +18,54 @@ import {
     CloseButton,
     AddressHeaderBar,
     InnerContainer,
+    AddressHeaderLabel,
 } from "../styles/AddressStyles";
+
+interface Contact {
+    id: string;
+    name: string;
+    email: string;
+    group?: string;
+    time_modified: string;
+}
 
 export default function Address() {
     const navigate = useNavigate();
+    const [contacts, setContacts] = useState<Contact[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [showAddModal, setShowAddModal] = useState(false);
+
+    // 📌 주소록 API 불러오기
+    useEffect(() => {
+        const fetchContacts = async () => {
+            try {
+                const tokenData = await chrome.storage.local.get("accessToken");
+                const accessToken = tokenData.accessToken;
+
+                if (!accessToken) {
+                    console.error("⚠️ AccessToken 없음 → 로그인 필요");
+                    return;
+                }
+
+                const res = await axios.get(
+                    "https://dearai.cspark.my/contacts/",
+                    {
+                        headers: {
+                            Authorization: `Bearer ${accessToken}`,
+                        },
+                    }
+                );
+
+                setContacts(res.data);
+            } catch (err) {
+                console.error("❌ 주소록 불러오기 실패:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchContacts();
+    }, []);
 
     return (
         <div
@@ -28,7 +75,7 @@ export default function Address() {
                 left: 0,
                 width: "100vw",
                 height: "100vh",
-                backgroundColor: "rgba(0, 0, 0, 0.4)",
+                backgroundColor: "transparent",
                 display: "flex",
                 justifyContent: "center",
                 alignItems: "center",
@@ -36,6 +83,7 @@ export default function Address() {
             }}
         >
             <ModalContainer>
+                {/* 상단 로고 */}
                 <HeaderBar>
                     <div
                         style={{
@@ -54,6 +102,7 @@ export default function Address() {
                     <CloseButton onClick={() => navigate(-1)}>x</CloseButton>
                 </HeaderBar>
 
+                {/* 상단 검색/추가 */}
                 <AddressHeaderBar>
                     <div
                         style={{
@@ -63,57 +112,88 @@ export default function Address() {
                             fontWeight: "bold",
                         }}
                     >
-                        <div>그룹 ▾</div>
-                        <div>이름</div>
-                        <div>메일 주소</div>
+                        <select
+                            style={{
+                                background: "transparent",
+                                color: "white",
+                                fontFamily: "Pretendard, sans-serif",
+                                borderRadius: "8px",
+                                padding: "4px 12px",
+                                border: "1px solid #fff",
+                                fontWeight: "bold",
+                                appearance: "none",
+                                outline: "none",
+                                minWidth: "70px",
+                            }}
+                            defaultValue="전체"
+                        >
+                            <option value="전체">전체</option>
+                            <option value="교수님">교수님</option>
+                            <option value="공모전">공모전</option>
+                            <option value="친구">친구</option>
+                        </select>
+                        <AddressHeaderLabel>이름</AddressHeaderLabel>
+                        <AddressHeaderLabel>메일 주소</AddressHeaderLabel>
                     </div>
-                    <div style={{ display: "flex", gap: "12px" }}>
+                    <div style={{ display: "flex" }}>
                         <SearchInput placeholder="검색어를 입력해 주세요.." />
-                        <AddButton>+ 주소 추가</AddButton>
+                        <AddButton onClick={() => setShowAddModal(true)}>
+                            + 주소 추가
+                        </AddButton>
                     </div>
                 </AddressHeaderBar>
 
+                {/* 주소록 테이블 */}
                 <InnerContainer>
-                    <AddressTable>
-                        <AddressBody>
-                            {[
-                                ["교수님", "김교수", "kimprof@univmail.edu"],
-                                [
-                                    "공모전",
-                                    "클라우드",
-                                    "cloudidea@contesthub.org",
-                                ],
-                                ["친구", "박찰리", "charliepark@friend.com"],
-                                ["친구", "구슬이", "imchoy@chocho.me"],
-                                ["친구", "친한", "clsgks@daum.net"],
-                                ["교수님", "최연구", "choiresearch@kmu.ac.kr"],
-                                [
-                                    "공모전",
-                                    "공공정보",
-                                    "publicinfo@ideaexpo.net",
-                                ],
-                                ["친구", "한결이", "hangyul@buddyzone.co.kr"],
-                                ["친구", "스티브", "steve@minecraft.io"],
-                            ].map(([group, name, email], index) => (
-                                <AddressRow key={index}>
-                                    <AddressCell>{group}</AddressCell>
-                                    <AddressCell>{name}</AddressCell>
-                                    <AddressCell>{email}</AddressCell>
-                                    <AddressCell>
-                                        <SendMailButton
-                                            onClick={() => navigate("/modal")}
+                    {loading ? (
+                        <p style={{ textAlign: "center" }}>불러오는 중...</p>
+                    ) : (
+                        <AddressTable>
+                            <AddressBody>
+                                {contacts.length === 0 ? (
+                                    <tr>
+                                        <td
+                                            colSpan={4}
+                                            style={{
+                                                textAlign: "center",
+                                                padding: "20px",
+                                            }}
                                         >
-                                            메일 보내기
-                                        </SendMailButton>
-                                        <EditButton>수정</EditButton>
-                                        <DeleteButton>삭제</DeleteButton>
-                                    </AddressCell>
-                                </AddressRow>
-                            ))}
-                        </AddressBody>
-                    </AddressTable>
+                                            등록된 주소록이 없습니다.
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    contacts.map((c) => (
+                                        <AddressRow key={c.id}>
+                                            <AddressCell>
+                                                {c.group ?? "-"}
+                                            </AddressCell>
+                                            <AddressCell>{c.name}</AddressCell>
+                                            <AddressCell>{c.email}</AddressCell>
+                                            <AddressCell>
+                                                <SendMailButton
+                                                    onClick={() =>
+                                                        navigate("/modal")
+                                                    }
+                                                >
+                                                    메일 보내기
+                                                </SendMailButton>
+                                                <EditButton>수정</EditButton>
+                                                <DeleteButton>
+                                                    삭제
+                                                </DeleteButton>
+                                            </AddressCell>
+                                        </AddressRow>
+                                    ))
+                                )}
+                            </AddressBody>
+                        </AddressTable>
+                    )}
                 </InnerContainer>
             </ModalContainer>
+            {showAddModal && (
+                <AddAddress onClose={() => setShowAddModal(false)} />
+            )}
         </div>
     );
 }

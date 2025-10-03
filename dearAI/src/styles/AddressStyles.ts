@@ -2,17 +2,18 @@ import styled from "styled-components";
 
 export const ModalContainer = styled.div`
     background: white;
+    box-shadow: none;
     border-radius: 16px;
-    width: 400px;
+    width: 100%;
+    max-width: 600px;
     font-family: "Pretendard", sans-serif;
-    height: 512px;
+    height: 600px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     position: relative;
-    margin: 0 16px;
+    margin: 0 auto;
     display: flex;
     flex-direction: column;
     border: 2px solid #82e0bb;
-    overflow: hidden;
 `;
 
 export const AddressTable = styled.table`
@@ -20,21 +21,24 @@ export const AddressTable = styled.table`
     border-collapse: collapse;
     font-family: "Pretendard", sans-serif;
     margin-top: 16px;
+    table-layout: fixed;
 `;
 
 export const AddressHeader = styled.thead`
     background-color: #82e0bb;
     color: white;
     font-size: 0.95rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 12px;
+    display: table-row;
 `;
 
 export const AddressHeaderCell = styled.th`
+    display: table-cell;
     padding: 12px;
-    text-align: left;
+    text-align: center;
+    width: 20%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 `;
 
 export const AddressBody = styled.tbody`
@@ -43,12 +47,31 @@ export const AddressBody = styled.tbody`
 `;
 
 export const AddressRow = styled.tr`
+    display: table-row;
     border-bottom: 1px solid #ddd;
 `;
 
 export const AddressCell = styled.td`
+    display: table-cell;
     padding: 12px;
     font-weight: 500;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    &:nth-child(1) {
+        width: 15%;
+    }
+    &:nth-child(2) {
+        width: 15%;
+    }
+    &:nth-child(3) {
+        width: 40%;
+    }
+    &:nth-child(4) {
+        width: 30%;
+    }
 `;
 
 export const ActionButton = styled.button`
@@ -99,13 +122,14 @@ export const SearchInput = styled.input`
 `;
 
 export const AddButton = styled.button`
-    background-color: #40c057;
+    background-color: rgb(136, 214, 183);
     color: white;
     font-weight: bold;
     padding: 8px 12px;
     border-radius: 12px;
-    border: none;
+    border: 1.5px solid #5dca9f;
     font-family: "Pretendard", sans-serif;
+    font-size: 0.7rem;
 `;
 
 export const HeaderBar = styled.div`
@@ -149,4 +173,12 @@ export const InnerContainer = styled.div`
     padding: 40px 60px;
     overflow-y: auto;
     flex: 1;
+`;
+
+export const AddressHeaderLabel = styled.div`
+    flex: 1;
+    text-align: center;
+    font-weight: bold;
+    font-size: 0.8rem;
+    color: white;
 `;
