@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import type { Contact } from "../types/Contact";
 import AddAddress from "./AddAddress";
 import {
     AddressTable,
@@ -21,19 +22,43 @@ import {
     AddressHeaderLabel,
 } from "../styles/AddressStyles";
 
-interface Contact {
-    id: string;
-    name: string;
-    email: string;
-    group?: string;
-    time_modified: string;
-}
-
 export default function Address() {
     const navigate = useNavigate();
     const [contacts, setContacts] = useState<Contact[]>([]);
     const [loading, setLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
+    const [editingContact, setEditingContact] = useState<Contact | null>(null);
+    const [groups, setGroups] = useState<string[]>([]);
+    const [selectedGroup, setSelectedGroup] = useState("전체");
+
+    // 삭제 함수
+    const handleDelete = async (contactId: string) => {
+        try {
+            const tokenData = await chrome.storage.local.get("accessToken");
+            const accessToken = tokenData.accessToken;
+            if (!accessToken) {
+                alert("AccessToken 없음 → 로그인 필요");
+                return;
+            }
+            await axios.delete(
+                `https://dearai.cspark.my/contacts/${contactId}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                }
+            );
+            setContacts((prev) => prev.filter((c) => c.id !== contactId));
+        } catch (err) {
+            alert("주소록 삭제 실패");
+            console.error("❌ 주소록 삭제 실패:", err);
+        }
+    };
+
+    // 수정 함수
+    const handleEdit = (contact: Contact) => {
+        setEditingContact(contact);
+    };
 
     // 📌 주소록 API 불러오기
     useEffect(() => {
@@ -56,7 +81,26 @@ export default function Address() {
                     }
                 );
 
-                setContacts(res.data);
+                setContacts(
+                    res.data.map((c: any) => ({
+                        id: c.id,
+                        name: c.recipient_name,
+                        email: c.email,
+                        group: c.recipient_group,
+                        time_modified: c.time_modified,
+                    }))
+                );
+                console.log("📥 불러온 주소록 데이터:", res.data);
+
+                const groupRes = await axios.get(
+                    "https://dearai.cspark.my/contacts/groups",
+                    {
+                        headers: {
+                            Authorization: `Bearer ${accessToken}`,
+                        },
+                    }
+                );
+                setGroups(groupRes.data || []);
             } catch (err) {
                 console.error("❌ 주소록 불러오기 실패:", err);
             } finally {
@@ -66,6 +110,11 @@ export default function Address() {
 
         fetchContacts();
     }, []);
+
+    const filteredContacts =
+        selectedGroup === "전체"
+            ? contacts
+            : contacts.filter((c) => c.group === selectedGroup);
 
     return (
         <div
@@ -125,12 +174,15 @@ export default function Address() {
                                 outline: "none",
                                 minWidth: "70px",
                             }}
-                            defaultValue="전체"
+                            value={selectedGroup}
+                            onChange={(e) => setSelectedGroup(e.target.value)}
                         >
                             <option value="전체">전체</option>
-                            <option value="교수님">교수님</option>
-                            <option value="공모전">공모전</option>
-                            <option value="친구">친구</option>
+                            {groups.map((group) => (
+                                <option key={group} value={group}>
+                                    {group}
+                                </option>
+                            ))}
                         </select>
                         <AddressHeaderLabel>이름</AddressHeaderLabel>
                         <AddressHeaderLabel>메일 주소</AddressHeaderLabel>
@@ -150,7 +202,7 @@ export default function Address() {
                     ) : (
                         <AddressTable>
                             <AddressBody>
-                                {contacts.length === 0 ? (
+                                {filteredContacts.length === 0 ? (
                                     <tr>
                                         <td
                                             colSpan={4}
@@ -163,7 +215,7 @@ export default function Address() {
                                         </td>
                                     </tr>
                                 ) : (
-                                    contacts.map((c) => (
+                                    filteredContacts.map((c) => (
                                         <AddressRow key={c.id}>
                                             <AddressCell>
                                                 {c.group ?? "-"}
@@ -176,10 +228,20 @@ export default function Address() {
                                                         navigate("/modal")
                                                     }
                                                 >
-                                                    메일 보내기
+                                                    선택
                                                 </SendMailButton>
-                                                <EditButton>수정</EditButton>
-                                                <DeleteButton>
+                                                <EditButton
+                                                    onClick={() =>
+                                                        handleEdit(c)
+                                                    }
+                                                >
+                                                    수정
+                                                </EditButton>
+                                                <DeleteButton
+                                                    onClick={() =>
+                                                        handleDelete(c.id)
+                                                    }
+                                                >
                                                     삭제
                                                 </DeleteButton>
                                             </AddressCell>
@@ -191,8 +253,15 @@ export default function Address() {
                     )}
                 </InnerContainer>
             </ModalContainer>
-            {showAddModal && (
-                <AddAddress onClose={() => setShowAddModal(false)} />
+            {editingContact ? (
+                <AddAddress
+                    contact={editingContact}
+                    onClose={() => setEditingContact(null)}
+                />
+            ) : (
+                showAddModal && (
+                    <AddAddress onClose={() => setShowAddModal(false)} />
+                )
             )}
         </div>
     );

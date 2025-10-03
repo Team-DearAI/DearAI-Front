@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 import {
     ModalContainer,
@@ -13,10 +13,69 @@ import {
     Button,
     Footer,
 } from "../styles/AddAddressStyles";
+import type { Contact } from "../types/Contact";
 
-const AddAddress: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+const AddAddress: React.FC<{ onClose: () => void; contact?: Contact }> = ({
+    onClose,
+    contact,
+}) => {
+    const [name, setName] = useState(contact?.name || "");
+    const [email, setEmail] = useState(contact?.email || "");
+    const [group, setGroup] = useState(contact?.group || "");
+    const [groups, setGroups] = useState<string[]>([]);
+
+    useEffect(() => {
+        chrome.storage.local.get(["accessToken"], ({ accessToken }) => {
+            if (!accessToken) return;
+            fetch("https://dearai.cspark.my/contacts/groups", {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                },
+            })
+                .then((res) => res.json())
+                .then((data) => {
+                    if (Array.isArray(data)) {
+                        setGroups(data);
+                    }
+                })
+                .catch((err) => {
+                    console.error("Failed to fetch groups:", err);
+                });
+        });
+    }, []);
+
     const modalRoot = document.getElementById("modal-root");
     if (!modalRoot) return null;
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const payload = { name, email, group };
+
+        try {
+            if (contact && contact.id) {
+                // Update existing contact
+                await fetch(`/api/contacts/${contact.id}`, {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(payload),
+                });
+            } else {
+                // Create new contact
+                await fetch("/api/contacts", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(payload),
+                });
+            }
+            onClose();
+        } catch (error) {
+            console.error("Failed to save contact:", error);
+        }
+    };
 
     return ReactDOM.createPortal(
         <div
@@ -45,18 +104,23 @@ const AddAddress: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                             x
                         </CloseButton>
                     </Header>
-                    <form>
+                    <form onSubmit={handleSubmit}>
                         <FormRow>
                             <Label htmlFor="group">그룹</Label>
                             <Select
                                 id="group"
-                                defaultValue=""
+                                value={group}
+                                onChange={(e) => setGroup(e.target.value)}
                                 aria-label="그룹 선택"
                             >
                                 <option value="" disabled hidden>
                                     그룹을 선택해 주세요.
                                 </option>
-                                {/* Options can be added here */}
+                                {groups.map((grp) => (
+                                    <option key={grp} value={grp}>
+                                        {grp}
+                                    </option>
+                                ))}
                             </Select>
                             <Button type="button" style={{ marginLeft: "8px" }}>
                                 그룹 추가
@@ -68,6 +132,8 @@ const AddAddress: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                                 id="name"
                                 type="text"
                                 placeholder="이름을 입력해 주세요."
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
                             />
                         </FormRow>
                         <FormRow>
@@ -76,6 +142,8 @@ const AddAddress: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                                 id="email"
                                 type="email"
                                 placeholder="메일 주소를 입력해 주세요."
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                             />
                         </FormRow>
                         <Footer>

@@ -20,7 +20,6 @@ export const AddressTable = styled.table`
     width: 100%;
     border-collapse: collapse;
     font-family: "Pretendard", sans-serif;
-    margin-top: 16px;
     table-layout: fixed;
 `;
 
@@ -33,7 +32,7 @@ export const AddressHeader = styled.thead`
 
 export const AddressHeaderCell = styled.th`
     display: table-cell;
-    padding: 12px;
+    padding: 10px 6px 12px 12px
     text-align: center;
     width: 20%;
     white-space: nowrap;
@@ -53,10 +52,11 @@ export const AddressRow = styled.tr`
 
 export const AddressCell = styled.td`
     display: table-cell;
-    padding: 12px;
-    font-weight: 500;
+    padding: 12px 6px 12px 12px;
+    font-weight: 400;
+    font-size: 0.85rem;
     text-align: center;
-    white-space: nowrap;
+    white-space: normal;
     overflow: hidden;
     text-overflow: ellipsis;
 
@@ -70,7 +70,7 @@ export const AddressCell = styled.td`
         width: 40%;
     }
     &:nth-child(4) {
-        width: 30%;
+        width: 40%;
     }
 `;
 
@@ -79,9 +79,14 @@ export const ActionButton = styled.button`
     border-radius: 8px;
     border: none;
     color: white;
-    font-weight: bold;
+    font-weight: 500;
+    font-size: 0.75rem;
     margin-right: 6px;
     font-family: "Pretendard", sans-serif;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 
     &:last-child {
         margin-right: 0;
@@ -90,15 +95,20 @@ export const ActionButton = styled.button`
 
 export const SendMailButton = styled(ActionButton)`
     background-color: #82e0bb;
+    border: 1.5px solid #68d7ab;
+    color: #fff;
 `;
 
 export const EditButton = styled(ActionButton)`
-    background-color: #ffd43b;
-    color: #333;
+    background-color: #face4e;
+    border: 1.5px solid #fbbc04;
+    color: #fff;
 `;
 
 export const DeleteButton = styled(ActionButton)`
-    background-color: #fa5252;
+    background-color: #f66969;
+    border: 1.5px solid #eb5151;
+    color: #fff;
 `;
 
 export const TopBar = styled.div`
@@ -130,6 +140,7 @@ export const AddButton = styled.button`
     border: 1.5px solid #5dca9f;
     font-family: "Pretendard", sans-serif;
     font-size: 0.7rem;
+    cursor: pointer;
 `;
 
 export const HeaderBar = styled.div`
@@ -170,7 +181,6 @@ export const SearchContainer = styled.div`
 `;
 
 export const InnerContainer = styled.div`
-    padding: 40px 60px;
     overflow-y: auto;
     flex: 1;
 `;
