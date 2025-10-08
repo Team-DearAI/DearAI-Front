@@ -191,4 +191,7 @@ export const AddressHeaderLabel = styled.div`
     font-weight: bold;
     font-size: 0.8rem;
     color: white;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 `;

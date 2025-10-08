@@ -8,39 +8,41 @@ import {
     CloseButton,
     FormRow,
     Label,
-    Select,
     Input,
     Button,
     Footer,
 } from "../styles/AddAddressStyles";
 import type { Contact } from "../types/Contact";
 
-const AddAddress: React.FC<{ onClose: () => void; contact?: Contact }> = ({
-    onClose,
-    contact,
-}) => {
+const AddAddress: React.FC<{
+    onClose: () => void;
+    contact?: Contact;
+    onSaved?: () => void;
+}> = ({ onClose, contact, onSaved }) => {
     const [name, setName] = useState(contact?.name || "");
     const [email, setEmail] = useState(contact?.email || "");
     const [group, setGroup] = useState(contact?.group || "");
     const [groups, setGroups] = useState<string[]>([]);
 
     useEffect(() => {
-        chrome.storage.local.get(["accessToken"], ({ accessToken }) => {
+        chrome.storage.local.get("accessToken", async ({ accessToken }) => {
             if (!accessToken) return;
-            fetch("https://dearai.cspark.my/contacts/groups", {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                },
-            })
-                .then((res) => res.json())
-                .then((data) => {
-                    if (Array.isArray(data)) {
-                        setGroups(data);
+            try {
+                const response = await fetch(
+                    "https://dearai.cspark.my/contacts/groups",
+                    {
+                        headers: {
+                            Authorization: `Bearer ${accessToken}`,
+                        },
                     }
-                })
-                .catch((err) => {
-                    console.error("Failed to fetch groups:", err);
-                });
+                );
+                const data = await response.json();
+                if (data.groups) {
+                    setGroups(data.groups);
+                }
+            } catch (error) {
+                console.error("Failed to fetch groups:", error);
+            }
         });
     }, []);
 
@@ -49,32 +51,49 @@ const AddAddress: React.FC<{ onClose: () => void; contact?: Contact }> = ({
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const payload = { name, email, group };
 
-        try {
-            if (contact && contact.id) {
-                // Update existing contact
-                await fetch(`/api/contacts/${contact.id}`, {
-                    method: "PATCH",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(payload),
-                });
-            } else {
-                // Create new contact
-                await fetch("/api/contacts", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(payload),
-                });
+        chrome.storage.local.get("accessToken", async ({ accessToken }) => {
+            if (!accessToken) {
+                console.error("No access token found");
+                return;
             }
-            onClose();
-        } catch (error) {
-            console.error("Failed to save contact:", error);
-        }
+            const payload = {
+                name,
+                email,
+                group,
+            };
+
+            try {
+                if (contact && contact.id) {
+                    // Update existing contact
+                    await fetch(
+                        `https://dearai.cspark.my/contacts/${contact.id}`,
+                        {
+                            method: "PATCH",
+                            headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${accessToken}`,
+                            },
+                            body: JSON.stringify(payload),
+                        }
+                    );
+                } else {
+                    // Create new contact
+                    await fetch("https://dearai.cspark.my/contacts/", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${accessToken}`,
+                        },
+                        body: JSON.stringify(payload),
+                    });
+                }
+                onSaved?.();
+                onClose();
+            } catch (error) {
+                console.error("Failed to save contact:", error);
+            }
+        });
     };
 
     return ReactDOM.createPortal(
@@ -107,24 +126,17 @@ const AddAddress: React.FC<{ onClose: () => void; contact?: Contact }> = ({
                     <form onSubmit={handleSubmit}>
                         <FormRow>
                             <Label htmlFor="group">그룹</Label>
-                            <Select
-                                id="group"
+                            <Input
+                                list="groups"
                                 value={group}
                                 onChange={(e) => setGroup(e.target.value)}
-                                aria-label="그룹 선택"
-                            >
-                                <option value="" disabled hidden>
-                                    그룹을 선택해 주세요.
-                                </option>
-                                {groups.map((grp) => (
-                                    <option key={grp} value={grp}>
-                                        {grp}
-                                    </option>
+                                placeholder="그룹 입력 또는 선택"
+                            />
+                            <datalist id="groups">
+                                {groups.map((g) => (
+                                    <option key={g} value={g} />
                                 ))}
-                            </Select>
-                            <Button type="button" style={{ marginLeft: "8px" }}>
-                                그룹 추가
-                            </Button>
+                            </datalist>
                         </FormRow>
                         <FormRow>
                             <Label htmlFor="name">이름</Label>
@@ -147,7 +159,9 @@ const AddAddress: React.FC<{ onClose: () => void; contact?: Contact }> = ({
                             />
                         </FormRow>
                         <Footer>
-                            <Button type="submit">확인</Button>
+                            <Button type="submit">
+                                {contact ? "수정" : "추가"}
+                            </Button>
                         </Footer>
                     </form>
                 </ModalContainer>

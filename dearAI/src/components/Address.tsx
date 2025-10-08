@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import type { Contact } from "../types/Contact";
+import type { Contact, ContactApiResponse } from "../types/Contact";
 import AddAddress from "./AddAddress";
 import {
     AddressTable,
@@ -61,53 +61,59 @@ export default function Address() {
     };
 
     // 📌 주소록 API 불러오기
-    useEffect(() => {
-        const fetchContacts = async () => {
-            try {
-                const tokenData = await chrome.storage.local.get("accessToken");
-                const accessToken = tokenData.accessToken;
+    const fetchContacts = async () => {
+        try {
+            const tokenData = await chrome.storage.local.get("accessToken");
+            const accessToken = tokenData.accessToken;
 
-                if (!accessToken) {
-                    console.error("⚠️ AccessToken 없음 → 로그인 필요");
-                    return;
-                }
-
-                const res = await axios.get(
-                    "https://dearai.cspark.my/contacts/",
-                    {
-                        headers: {
-                            Authorization: `Bearer ${accessToken}`,
-                        },
-                    }
-                );
-
-                setContacts(
-                    res.data.map((c: any) => ({
-                        id: c.id,
-                        name: c.recipient_name,
-                        email: c.email,
-                        group: c.recipient_group,
-                        time_modified: c.time_modified,
-                    }))
-                );
-                console.log("📥 불러온 주소록 데이터:", res.data);
-
-                const groupRes = await axios.get(
-                    "https://dearai.cspark.my/contacts/groups",
-                    {
-                        headers: {
-                            Authorization: `Bearer ${accessToken}`,
-                        },
-                    }
-                );
-                setGroups(groupRes.data || []);
-            } catch (err) {
-                console.error("❌ 주소록 불러오기 실패:", err);
-            } finally {
-                setLoading(false);
+            if (!accessToken) {
+                console.error("⚠️ AccessToken 없음 → 로그인 필요");
+                return;
             }
-        };
 
+            const res = await axios.get("https://dearai.cspark.my/contacts/", {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                },
+            });
+
+            const raw = res.data;
+
+            // JSON stringify/parse로 순수 데이터화
+            const normalized = JSON.parse(JSON.stringify(raw));
+
+            // 무조건 배열화
+            const arr = Array.isArray(normalized) ? normalized : [normalized];
+
+            setContacts(
+                arr.map((c: ContactApiResponse) => ({
+                    id: c.id,
+                    name: c.recipient_name,
+                    email: c.email,
+                    group: c.recipient_group,
+                    time_modified: c.time_modified,
+                }))
+            );
+
+            console.log("📥 불러온 주소록 데이터:", arr);
+
+            const groupRes = await axios.get(
+                "https://dearai.cspark.my/contacts/groups",
+                {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                }
+            );
+            setGroups(groupRes.data.groups || []);
+        } catch (err) {
+            console.error("❌ 주소록 불러오기 실패:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
         fetchContacts();
     }, []);
 
@@ -257,10 +263,14 @@ export default function Address() {
                 <AddAddress
                     contact={editingContact}
                     onClose={() => setEditingContact(null)}
+                    onSaved={fetchContacts}
                 />
             ) : (
                 showAddModal && (
-                    <AddAddress onClose={() => setShowAddModal(false)} />
+                    <AddAddress
+                        onClose={() => setShowAddModal(false)}
+                        onSaved={fetchContacts}
+                    />
                 )
             )}
         </div>
