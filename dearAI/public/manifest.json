@@ -7,11 +7,12 @@
         "default_popup": "index.html",
         "default_icon": "logo.png"
     },
-    "permissions": ["identity", "storage"],
+    "permissions": ["identity", "storage", "tabs", "scripting"],
     "host_permissions": [
         "https://dearai.cspark.my/*",
         "https://*.googleapis.com/*",
-        "https://*.googleusercontent.com/*"
+        "https://*.googleusercontent.com/*",
+        "https://mail.naver.com/*"
     ],
     "icons": {
         "16": "logo.png",

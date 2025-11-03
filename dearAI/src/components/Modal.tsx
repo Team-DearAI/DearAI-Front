@@ -4,9 +4,22 @@ declare const chrome: {
             clear: (callback?: () => void) => void;
         };
     };
+    runtime: {
+        sendMessage: (
+            message: { action: string },
+            responseCallback?: (response: {
+                success?: boolean;
+                recipient?: string;
+                error?: string;
+                status?: string;
+            }) => void
+        ) => void;
+    };
 };
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import Logo from "./Logo";
+import CloseButton from "./CloseButton";
 import {
     Backdrop,
     Container,
@@ -16,8 +29,6 @@ import {
     Input,
     Textarea,
     Footer,
-    CloseButton,
-    Logo,
     RecipientSelect,
     SmallGreenButton,
     InfoButton,
@@ -43,6 +54,7 @@ export const Modal: React.FC = () => {
         window.innerWidth < 320
     );
     const [logoClickCount, setLogoClickCount] = React.useState(0);
+    const [recipient, setRecipient] = React.useState<string>("");
 
     // Optional: Reset click count after a short timeout
     React.useEffect(() => {
@@ -61,6 +73,28 @@ export const Modal: React.FC = () => {
         return () => window.removeEventListener("resize", handleResize);
     }, []);
 
+    // 네이버 메일 화면에서 받는 사람 정보 불러오기
+    const handleLoadRecipient = () => {
+        console.log("[Modal] Sending getRecipient message to background");
+
+        chrome.runtime.sendMessage(
+            { action: "getRecipient" },
+            (response) => {
+                console.log("[Modal] Response from background:", response);
+
+                if (response?.success && response.recipient) {
+                    setRecipient(response.recipient);
+                    console.log("받는 사람 불러오기 성공:", response.recipient);
+                    alert(`받는 사람: ${response.recipient}`);
+                } else {
+                    const errorMsg = response?.error || "받는 사람 정보를 찾을 수 없습니다.";
+                    console.error("받는 사람 불러오기 실패:", errorMsg);
+                    alert(errorMsg);
+                }
+            }
+        );
+    };
+
     return (
         <Backdrop>
             {isSmallScreen && (
@@ -69,11 +103,10 @@ export const Modal: React.FC = () => {
                 </WarningMessage>
             )}
             <Container>
-                <CloseButton onClick={() => window.close()}>×</CloseButton>
+                <CloseButton onClick={() => window.close()} />
                 <Header>
                     <Logo
-                        src="/logo.png"
-                        alt="logo"
+                        size={32}
                         onClick={() => {
                             setLogoClickCount((prev) => {
                                 const newCount = prev + 1;
@@ -98,8 +131,11 @@ export const Modal: React.FC = () => {
                 <Section>
                     <Row>
                         <Label style={{ width: "80px" }}>받는 사람</Label>
-                        <RecipientSelect>
-                            <option disabled selected>
+                        <RecipientSelect
+                            value={recipient}
+                            onChange={(e) => setRecipient(e.target.value)}
+                        >
+                            <option value="" disabled>
                                 받을 친구를 선택하세요.
                             </option>
                             <option>친구1@example.com</option>
@@ -108,7 +144,9 @@ export const Modal: React.FC = () => {
                         <SmallGreenButton onClick={() => navigate("/address")}>
                             주소록 보기
                         </SmallGreenButton>
-                        <SmallGreenButton>불러오기</SmallGreenButton>
+                        <SmallGreenButton onClick={handleLoadRecipient}>
+                            불러오기
+                        </SmallGreenButton>
                     </Row>
                 </Section>
 

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
+import Logo from "./Logo";
+import CloseButton from "./CloseButton";
 import {
     ModalContainer,
     Header,
-    Logo,
     Title,
-    CloseButton,
     FormRow,
     Label,
     Input,
@@ -116,12 +116,10 @@ const AddAddress: React.FC<{
                 <ModalContainer>
                     <Header>
                         <div style={{ display: "flex", alignItems: "center" }}>
-                            <Logo src="/logo.png" alt="logo" />
+                            <Logo size={32} />
                             <Title>DearAI</Title>
                         </div>
-                        <CloseButton onClick={onClose} aria-label="Close modal">
-                            x
-                        </CloseButton>
+                        <CloseButton onClick={onClose} />
                     </Header>
                     <form onSubmit={handleSubmit}>
                         <FormRow>

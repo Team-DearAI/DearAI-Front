@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import type { Contact, ContactApiResponse } from "../types/Contact";
 import AddAddress from "./AddAddress";
+import LogoImage from "./Logo";
+import CloseBtn from "./CloseButton";
 import {
     AddressTable,
     AddressBody,
@@ -16,10 +18,11 @@ import {
     ModalContainer,
     HeaderBar,
     Logo,
-    CloseButton,
     AddressHeaderBar,
     InnerContainer,
     AddressHeaderLabel,
+    GroupSelect,
+    SearchButton,
 } from "../styles/AddressStyles";
 
 export default function Address() {
@@ -144,57 +147,74 @@ export default function Address() {
                         style={{
                             display: "flex",
                             alignItems: "center",
-                            gap: "10px",
+                            gap: "12px",
                         }}
                     >
-                        <img
-                            src="/logo.png"
-                            alt="logo"
-                            style={{ width: "32px" }}
-                        />
+                        <LogoImage size={36} />
                         <Logo>DearAI</Logo>
                     </div>
-                    <CloseButton onClick={() => navigate(-1)}>x</CloseButton>
+                    <div style={{ display: "flex", alignItems: "center" }}>
+                        <CloseBtn
+                            onClick={() => navigate("/modal")}
+                            size={32}
+                            absolute={false}
+                        />
+                    </div>
                 </HeaderBar>
 
                 {/* 상단 검색/추가 */}
                 <AddressHeaderBar>
                     <div
                         style={{
-                            display: "flex",
-                            gap: "20px",
-                            color: "white",
-                            fontWeight: "bold",
+                            display: "grid",
+                            gridTemplateColumns: "80px 1fr 2.3fr",
+                            gap: "10px",
+                            alignItems: "center",
+                            flex: 1,
                         }}
                     >
-                        <select
-                            style={{
-                                background: "transparent",
-                                color: "white",
-                                fontFamily: "Pretendard, sans-serif",
-                                borderRadius: "8px",
-                                padding: "4px 12px",
-                                border: "1px solid #fff",
-                                fontWeight: "bold",
-                                appearance: "none",
-                                outline: "none",
-                                minWidth: "70px",
-                            }}
+                        <GroupSelect
                             value={selectedGroup}
                             onChange={(e) => setSelectedGroup(e.target.value)}
                         >
-                            <option value="전체">전체</option>
+                            <option value="전체">그룹</option>
                             {groups.map((group) => (
                                 <option key={group} value={group}>
                                     {group}
                                 </option>
                             ))}
-                        </select>
+                        </GroupSelect>
                         <AddressHeaderLabel>이름</AddressHeaderLabel>
                         <AddressHeaderLabel>메일 주소</AddressHeaderLabel>
                     </div>
-                    <div style={{ display: "flex" }}>
-                        <SearchInput placeholder="검색어를 입력해 주세요.." />
+                    <div style={{ display: "flex", flexShrink: 0, gap: "8px" }}>
+                        <div style={{ display: "flex" }}>
+                            <SearchInput placeholder="검색어를 입력해 주세요." />
+                            <SearchButton>
+                                <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 16 16"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        d="M7 12C9.76142 12 12 9.76142 12 7C12 4.23858 9.76142 2 7 2C4.23858 2 2 4.23858 2 7C2 9.76142 4.23858 12 7 12Z"
+                                        stroke="#666"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    />
+                                    <path
+                                        d="M10.5 10.5L14 14"
+                                        stroke="#666"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    />
+                                </svg>
+                            </SearchButton>
+                        </div>
                         <AddButton onClick={() => setShowAddModal(true)}>
                             + 주소 추가
                         </AddButton>
