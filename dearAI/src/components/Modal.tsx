@@ -20,6 +20,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import Logo from "./Logo";
 import CloseButton from "./CloseButton";
+import Tooltip from "./Tooltip";
 import {
     Backdrop,
     Container,
@@ -29,7 +30,6 @@ import {
     Input,
     Textarea,
     Footer,
-    RecipientSelect,
     SmallGreenButton,
     InfoButton,
     CheckboxLabel,
@@ -55,6 +55,7 @@ export const Modal: React.FC = () => {
     );
     const [logoClickCount, setLogoClickCount] = React.useState(0);
     const [recipient, setRecipient] = React.useState<string>("");
+    const [showTooltip, setShowTooltip] = React.useState(false);
 
     // Optional: Reset click count after a short timeout
     React.useEffect(() => {
@@ -85,7 +86,7 @@ export const Modal: React.FC = () => {
                 if (response?.success && response.recipient) {
                     setRecipient(response.recipient);
                     console.log("받는 사람 불러오기 성공:", response.recipient);
-                    alert(`받는 사람: ${response.recipient}`);
+                    // 성공 시 자동으로 입력창에 채워짐
                 } else {
                     const errorMsg = response?.error || "받는 사람 정보를 찾을 수 없습니다.";
                     console.error("받는 사람 불러오기 실패:", errorMsg);
@@ -131,16 +132,13 @@ export const Modal: React.FC = () => {
                 <Section>
                     <Row>
                         <Label style={{ width: "80px" }}>받는 사람</Label>
-                        <RecipientSelect
+                        <Input
+                            type="text"
                             value={recipient}
                             onChange={(e) => setRecipient(e.target.value)}
-                        >
-                            <option value="" disabled>
-                                받을 친구를 선택하세요.
-                            </option>
-                            <option>친구1@example.com</option>
-                            <option>친구2@example.com</option>
-                        </RecipientSelect>
+                            placeholder="받을 사람을 입력하세요."
+                            style={{ flex: 1, maxWidth: "200px" }}
+                        />
                         <SmallGreenButton onClick={() => navigate("/address")}>
                             주소록 보기
                         </SmallGreenButton>
@@ -158,7 +156,10 @@ export const Modal: React.FC = () => {
                             placeholder="메일 제목 입력"
                             style={{ flex: 1, marginRight: "8px" }}
                         />
-                        <InfoButton title="메일 제목 어떻게 지어야 하나요?">
+                        <InfoButton
+                            onClick={() => setShowTooltip(true)}
+                            title="메일 제목 작성 팁 보기"
+                        >
                             ⓘ
                         </InfoButton>
                     </Row>
@@ -239,6 +240,9 @@ export const Modal: React.FC = () => {
                     </FinalButton>
                 </Footer>
             </Container>
+
+            {/* Tooltip */}
+            <Tooltip isVisible={showTooltip} onClose={() => setShowTooltip(false)} />
         </Backdrop>
     );
 };
