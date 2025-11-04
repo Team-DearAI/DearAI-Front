@@ -130,27 +130,32 @@ export const CloseButton = styled.button`
 
 export const RecipientSelect = styled.select`
     flex: 1;
-    padding: 6px 12px;
+    max-width: 200px;
+    padding: 6px 10px;
     border-radius: 12px;
     border: 1px solid #ccc;
-    font-size: 0.8rem;
-    margin-right: 8px;
+    font-size: 0.75rem;
     font-family: "Pretendard", sans-serif;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 `;
 
 export const SmallGreenButton = styled.button`
-    padding: 10px 9px;
+    padding: 8px 10px;
     background-color: #82e0bb;
     border: none;
     border-radius: 8px;
     color: #fff;
     cursor: pointer;
-    margin-right: 6px;
     font-family: "Pretendard", sans-serif;
-    font-size: 0.7rem; // added to reduce text size
+    font-size: 0.7rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: transform 0.2s;
 
-    &:last-child {
-        margin-right: 0;
+    &:hover {
+        transform: scale(1.05);
     }
 `;
 
@@ -199,14 +204,35 @@ export const CheckboxLabel = styled.label`
 `;
 
 export const LanguageSelect = styled.select`
-    padding: 6px 10px;
-    border-radius: 12px;
-    border: 1px solid #ccc;
+    padding: 8px 32px 8px 12px;
+    border-radius: 10px;
+    border: 2px solid #82e0bb;
     font-size: 0.8rem;
     font-family: "Pretendard", sans-serif;
+    font-weight: 500;
+    color: #333;
+    background-color: white;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2382e0bb' d='M6 8L2 4h8z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    appearance: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    outline: none;
 
-    &::placeholder {
-        font-size: 0.75rem;
+    &:hover {
+        border-color: #68d7ab;
+        box-shadow: 0 2px 8px rgba(130, 224, 187, 0.2);
+    }
+
+    &:focus {
+        border-color: #68d7ab;
+        box-shadow: 0 0 0 3px rgba(130, 224, 187, 0.1);
+    }
+
+    option {
+        padding: 8px;
+        font-family: "Pretendard", sans-serif;
     }
 `;
 
@@ -306,6 +332,7 @@ export const Row = styled.div`
     display: flex;
     align-items: center;
     margin-bottom: 8px;
+    gap: 6px;
 `;
 
 export const CheckboxGroup = styled.div`

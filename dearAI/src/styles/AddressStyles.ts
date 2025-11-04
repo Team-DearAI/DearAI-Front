@@ -129,36 +129,52 @@ export const TopBar = styled.div`
 `;
 
 export const SearchInput = styled.input`
-    padding: 6px 10px;
+    padding: 5px 8px;
     border-radius: 10px 0 0 10px;
     border: 1px solid rgba(0, 0, 0, 0.1);
     font-family: "Pretendard", sans-serif;
-    font-size: 0.75rem;
-    width: 150px;
+    font-size: 0.7rem;
+    width: 120px;
     outline: none;
+    transition: all 0.2s;
+
+    &:focus {
+        border-color: #82e0bb;
+        box-shadow: 0 0 0 2px rgba(130, 224, 187, 0.1);
+    }
 
     &::placeholder {
         font-family: "Pretendard", sans-serif;
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         color: #999;
     }
 `;
 
 export const AddButton = styled.button`
-    background-color: rgb(136, 214, 183);
+    background: linear-gradient(135deg, #82e0bb 0%, #68d7ab 100%);
     color: white;
-    font-weight: bold;
-    padding: 7px 12px;
+    font-weight: 600;
+    padding: 6px 12px;
     border-radius: 10px;
-    border: 1.5px solid #5dca9f;
+    border: none;
     font-family: "Pretendard", sans-serif;
     font-size: 0.75rem;
     cursor: pointer;
     white-space: nowrap;
-    transition: transform 0.2s;
+    transition: all 0.2s;
+    box-shadow: 0 2px 6px rgba(130, 224, 187, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 4px;
 
     &:hover {
-        transform: scale(1.05);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(130, 224, 187, 0.4);
+        background: linear-gradient(135deg, #68d7ab 0%, #5dca9f 100%);
+    }
+
+    &:active {
+        transform: translateY(0);
     }
 `;
 
@@ -222,19 +238,25 @@ export const GroupSelect = styled.select`
     background: rgba(255, 255, 255, 0.2);
     color: white;
     font-family: "Pretendard", sans-serif;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     border-radius: 6px;
-    padding: 6px 20px 6px 8px;
+    padding: 5px 18px 5px 8px;
     border: 1px solid rgba(255, 255, 255, 0.5);
     font-weight: bold;
     outline: none;
     cursor: pointer;
     appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='white' d='M6 8L2 4h8z'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath fill='white' d='M6 8L2 4h8z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 4px center;
-    min-width: 70px;
-    max-width: 90px;
+    min-width: 60px;
+    max-width: 75px;
+    transition: all 0.2s;
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.3);
+        border-color: rgba(255, 255, 255, 0.7);
+    }
 
     option {
         background: #82e0bb;
