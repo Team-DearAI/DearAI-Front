@@ -12,7 +12,9 @@ function loginWithGoogle() {
     console.log("Extension redirect URI:", redirectUri);
     console.log("[BG] chrome.runtime.id:", chrome.runtime?.id);
 
-    const loginUrl = "https://dearai.cspark.my/login";
+    // URL에 redirect_uri를 명시적으로 추가
+    const encodedRedirectUri = encodeURIComponent(redirectUri);
+    const loginUrl = `https://dearai.cspark.my/login?redirect_uri=${encodedRedirectUri}`;
     console.log("Prepared login URL:", loginUrl);
 
     let waitSeconds = 0;
@@ -30,7 +32,7 @@ function loginWithGoogle() {
             console.log("[BG] launchWebAuthFlow callback fired after", (t1 - t0), "ms");
 
             console.log("launchWebAuthFlow callback triggered.");
-            if (chrome.runtime.lastError || !redirectUrl) {
+            if (chrome.runtime.lastError) {
                 try {
                     console.error("[BG] lastError (object):", chrome.runtime.lastError);
                     if (chrome.runtime.lastError && chrome.runtime.lastError.message) {
@@ -51,14 +53,22 @@ function loginWithGoogle() {
                 return;
             }
 
+            if (!redirectUrl) {
+                console.error("[BG] No redirect URL received");
+                return;
+            }
+
             console.log("Redirect URL received:", redirectUrl);
 
             try {
                 const url = new URL(redirectUrl);
                 const params = new URLSearchParams(url.search);
 
-                const accessToken = params.get("access_token");
-                const refreshToken = params.get("refresh_token");
+                // Hash fragment도 확인 (OAuth2 implicit flow의 경우)
+                const hashParams = new URLSearchParams(url.hash.substring(1));
+
+                const accessToken = params.get("access_token") || hashParams.get("access_token");
+                const refreshToken = params.get("refresh_token") || hashParams.get("refresh_token");
                 console.log("Parsed tokens from redirect URL:", { accessToken, refreshToken });
 
                 if (accessToken) {

@@ -153,13 +153,11 @@ export default function Address() {
                         <LogoImage size={36} />
                         <Logo>DearAI</Logo>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center" }}>
-                        <CloseBtn
-                            onClick={() => navigate("/modal")}
-                            size={32}
-                            absolute={false}
-                        />
-                    </div>
+                    <CloseBtn
+                        onClick={() => navigate("/modal")}
+                        size={32}
+                        absolute={false}
+                    />
                 </HeaderBar>
 
                 {/* 상단 검색/추가 */}
@@ -167,8 +165,8 @@ export default function Address() {
                     <div
                         style={{
                             display: "grid",
-                            gridTemplateColumns: "80px 1fr 2.3fr",
-                            gap: "10px",
+                            gridTemplateColumns: "60px 1fr 2.3fr",
+                            gap: "6px",
                             alignItems: "center",
                             flex: 1,
                         }}
@@ -187,7 +185,9 @@ export default function Address() {
                         <AddressHeaderLabel>이름</AddressHeaderLabel>
                         <AddressHeaderLabel>메일 주소</AddressHeaderLabel>
                     </div>
-                    <div style={{ display: "flex", flexShrink: 0, gap: "8px" }}>
+                    <div
+                        style={{ display: "flex", flexShrink: 0, gap: "10px" }}
+                    >
                         <div style={{ display: "flex" }}>
                             <SearchInput placeholder="검색어를 입력해 주세요." />
                             <SearchButton>
@@ -216,7 +216,7 @@ export default function Address() {
                             </SearchButton>
                         </div>
                         <AddButton onClick={() => setShowAddModal(true)}>
-                            + 주소 추가
+                            + 추가
                         </AddButton>
                     </div>
                 </AddressHeaderBar>

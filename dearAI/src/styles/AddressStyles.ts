@@ -210,7 +210,7 @@ export const AddressHeaderBar = styled.div`
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 16px;
+    gap: 0px;
 `;
 
 export const SearchContainer = styled.div`
@@ -249,8 +249,7 @@ export const GroupSelect = styled.select`
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath fill='white' d='M6 8L2 4h8z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 4px center;
-    min-width: 60px;
-    max-width: 75px;
+    width: 60px;
     transition: all 0.2s;
 
     &:hover {

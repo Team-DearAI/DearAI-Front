@@ -40,6 +40,7 @@ export const Header = styled.header`
     margin-bottom: 18px;
     display: flex;
     align-items: center;
+    gap: 12px;
 `;
 
 export const Logo = styled.img`
@@ -206,13 +207,13 @@ export const CheckboxLabel = styled.label`
 export const LanguageSelect = styled.select`
     padding: 8px 32px 8px 12px;
     border-radius: 10px;
-    border: 2px solid #82e0bb;
+    border: 1px solid #ccc;
     font-size: 0.8rem;
     font-family: "Pretendard", sans-serif;
     font-weight: 500;
     color: #333;
-    background-color: white;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2382e0bb' d='M6 8L2 4h8z'/%3E%3C/svg%3E");
+    background-color: #f5f5f5;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L2 4h8z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 10px center;
     appearance: none;
@@ -221,18 +222,55 @@ export const LanguageSelect = styled.select`
     outline: none;
 
     &:hover {
-        border-color: #68d7ab;
-        box-shadow: 0 2px 8px rgba(130, 224, 187, 0.2);
+        border-color: #999;
+        background-color: #ececec;
     }
 
     &:focus {
-        border-color: #68d7ab;
-        box-shadow: 0 0 0 3px rgba(130, 224, 187, 0.1);
+        border-color: #999;
+        box-shadow: 0 0 0 2px rgba(153, 153, 153, 0.1);
     }
 
     option {
-        padding: 8px;
+        padding: 12px 16px;
         font-family: "Pretendard", sans-serif;
+        background-color: #ffffff;
+        color: #333;
+        border: none;
+        font-size: 0.85rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    option:hover {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #ffffff;
+        text-shadow: 0 0 10px rgba(102, 126, 234, 0.5),
+                     0 0 20px rgba(118, 75, 162, 0.3);
+        box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4),
+                    inset 0 0 20px rgba(118, 75, 162, 0.2);
+        font-weight: 600;
+    }
+
+    option:checked {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #ffffff;
+        font-weight: 600;
+    }
+
+    option[disabled] {
+        color: #999;
+        background-color: #f5f5f5;
+        cursor: not-allowed;
+    }
+
+    option[disabled]:hover {
+        background-color: #f5f5f5;
+        color: #999;
+        text-shadow: none;
+        box-shadow: none;
+        font-weight: 500;
     }
 `;
 
@@ -261,6 +299,11 @@ export const ResultButton = styled.button`
     cursor: pointer;
     font-size: 0.8rem;
     font-family: "Pretendard", sans-serif;
+    transition: transform 0.2s;
+
+    &:hover {
+        transform: scale(1.05);
+    }
 `;
 
 export const KeywordTag = styled.span`
@@ -313,6 +356,15 @@ export const FinalButton = styled(Button)`
     align-items: center;
     gap: 8px;
     font-family: "DungGeunMo", cursive;
+    transition: all 0.3s;
+
+    &:hover {
+        background-color: #82e0bb;
+        transform: scale(1.05);
+        box-shadow: 0 0 20px rgba(130, 224, 187, 0.6),
+                    0 0 40px rgba(130, 224, 187, 0.4),
+                    0 0 60px rgba(130, 224, 187, 0.2);
+    }
 `;
 
 export const CarIcon = styled.img`
