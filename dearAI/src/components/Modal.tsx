@@ -21,6 +21,7 @@ import { useNavigate } from "react-router-dom";
 import Logo from "./Logo";
 import CloseButton from "./CloseButton";
 import Tooltip from "./Tooltip";
+import ErrorModal from "./ErrorModal";
 import {
     Backdrop,
     Container,
@@ -56,6 +57,13 @@ export const Modal: React.FC = () => {
     const [logoClickCount, setLogoClickCount] = React.useState(0);
     const [recipient, setRecipient] = React.useState<string>("");
     const [showTooltip, setShowTooltip] = React.useState(false);
+    const [errorModal, setErrorModal] = React.useState<{
+        isVisible: boolean;
+        message: string;
+    }>({
+        isVisible: false,
+        message: "",
+    });
 
     // Optional: Reset click count after a short timeout
     React.useEffect(() => {
@@ -90,10 +98,32 @@ export const Modal: React.FC = () => {
                 } else {
                     const errorMsg = response?.error || "받는 사람 정보를 찾을 수 없습니다.";
                     console.error("받는 사람 불러오기 실패:", errorMsg);
-                    alert(errorMsg);
+
+                    // 에러 모달 표시
+                    setErrorModal({
+                        isVisible: true,
+                        message: getErrorMessage(errorMsg),
+                    });
                 }
             }
         );
+    };
+
+    // 에러 메시지를 사용자 친화적으로 변환
+    const getErrorMessage = (error: string): string => {
+        if (error.includes("찾을 수 없습니다") || error.includes("not found")) {
+            return "메일 화면이 아닙니다!\n네이버 메일 작성 화면에서 다시 시도해주세요.";
+        }
+        if (error.includes("권한") || error.includes("permission")) {
+            return "권한이 없습니다!\n익스텐션 권한 설정을 확인해주세요.";
+        }
+        if (error.includes("응답") || error.includes("timeout")) {
+            return "응답이 없습니다!\n잠시 후 다시 시도해주세요.";
+        }
+        if (error.includes("비어") || error.includes("empty")) {
+            return "내용이 비어있습니다!\n받는 사람을 입력한 후 시도해주세요.";
+        }
+        return "오류가 발생했습니다!\n다시 시도해주세요.";
     };
 
     return (
@@ -243,6 +273,15 @@ export const Modal: React.FC = () => {
 
             {/* Tooltip */}
             <Tooltip isVisible={showTooltip} onClose={() => setShowTooltip(false)} />
+
+            {/* Error Modal */}
+            <ErrorModal
+                isVisible={errorModal.isVisible}
+                onClose={() =>
+                    setErrorModal({ isVisible: false, message: "" })
+                }
+                message={errorModal.message}
+            />
         </Backdrop>
     );
 };
