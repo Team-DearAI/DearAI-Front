@@ -2,14 +2,17 @@ declare const chrome: {
     storage: {
         local: {
             clear: (callback?: () => void) => void;
+            get: (keys: string[], callback: (result: any) => void) => void;
+            set: (items: { [key: string]: any }, callback?: () => void) => void;
         };
     };
     runtime: {
         sendMessage: (
-            message: { action: string },
+            message: { action: string; content?: string },
             responseCallback?: (response: {
                 success?: boolean;
                 recipient?: string;
+                content?: string;
                 error?: string;
                 status?: string;
             }) => void
@@ -17,7 +20,7 @@ declare const chrome: {
     };
 };
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Logo from "./Logo";
 import CloseButton from "./CloseButton";
 import Tooltip from "./Tooltip";
@@ -51,12 +54,17 @@ import {
 
 export const Modal: React.FC = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [isSmallScreen, setIsSmallScreen] = React.useState(
         window.innerWidth < 320
     );
     const [logoClickCount, setLogoClickCount] = React.useState(0);
     const [recipient, setRecipient] = React.useState<string>("");
+    const [mailContent, setMailContent] = React.useState<string>("");
     const [showTooltip, setShowTooltip] = React.useState(false);
+    const [excludedKeywords, setExcludedKeywords] = React.useState<string[]>(["진짜", "레알", "에바"]);
+    const [isAddingKeyword, setIsAddingKeyword] = React.useState(false);
+    const [newKeyword, setNewKeyword] = React.useState("");
     const [errorModal, setErrorModal] = React.useState<{
         isVisible: boolean;
         message: string;
@@ -64,6 +72,48 @@ export const Modal: React.FC = () => {
         isVisible: false,
         message: "",
     });
+
+    // 컴포넌트 마운트 시 저장된 내용 불러오기
+    React.useEffect(() => {
+        chrome.storage.local.get(['draftRecipient', 'draftMailContent'], (result) => {
+            if (result.draftRecipient) {
+                setRecipient(result.draftRecipient);
+                console.log('[Modal] 저장된 받는 사람 불러옴:', result.draftRecipient);
+            }
+            if (result.draftMailContent) {
+                setMailContent(result.draftMailContent);
+                console.log('[Modal] 저장된 메일 내용 불러옴:', result.draftMailContent.substring(0, 50));
+            }
+        });
+    }, []);
+
+    // 주소록에서 받는 사람 정보를 받아오는 useEffect
+    React.useEffect(() => {
+        const state = location.state as { recipient?: string } | null;
+        if (state?.recipient) {
+            setRecipient(state.recipient);
+            // 상태를 사용한 후 초기화 (뒤로가기 시 재사용 방지)
+            navigate(location.pathname, { replace: true, state: {} });
+        }
+    }, [location, navigate]);
+
+    // 받는 사람이 변경될 때마다 자동 저장
+    React.useEffect(() => {
+        if (recipient) {
+            chrome.storage.local.set({ draftRecipient: recipient }, () => {
+                console.log('[Modal] 받는 사람 자동 저장:', recipient);
+            });
+        }
+    }, [recipient]);
+
+    // 메일 내용이 변경될 때마다 자동 저장
+    React.useEffect(() => {
+        if (mailContent) {
+            chrome.storage.local.set({ draftMailContent: mailContent }, () => {
+                console.log('[Modal] 메일 내용 자동 저장:', mailContent.substring(0, 50));
+            });
+        }
+    }, [mailContent]);
 
     // Optional: Reset click count after a short timeout
     React.useEffect(() => {
@@ -82,7 +132,7 @@ export const Modal: React.FC = () => {
         return () => window.removeEventListener("resize", handleResize);
     }, []);
 
-    // 네이버 메일 화면에서 받는 사람 정보 불러오기
+    // 네이버 메일 화면에서 받는 사람 정보와 메일 내용 불러오기
     const handleLoadRecipient = () => {
         console.log("[Modal] Sending getRecipient message to background");
 
@@ -91,13 +141,19 @@ export const Modal: React.FC = () => {
             (response) => {
                 console.log("[Modal] Response from background:", response);
 
-                if (response?.success && response.recipient) {
-                    setRecipient(response.recipient);
-                    console.log("받는 사람 불러오기 성공:", response.recipient);
+                if (response?.success) {
+                    if (response.recipient) {
+                        setRecipient(response.recipient);
+                        console.log("받는 사람 불러오기 성공:", response.recipient);
+                    }
+                    if (response.content) {
+                        setMailContent(response.content);
+                        console.log("메일 내용 불러오기 성공:", response.content.substring(0, 100));
+                    }
                     // 성공 시 자동으로 입력창에 채워짐
                 } else {
                     const errorMsg = response?.error || "받는 사람 정보를 찾을 수 없습니다.";
-                    console.error("받는 사람 불러오기 실패:", errorMsg);
+                    console.error("불러오기 실패:", errorMsg);
 
                     // 에러 모달 표시
                     setErrorModal({
@@ -124,6 +180,65 @@ export const Modal: React.FC = () => {
             return "내용이 비어있습니다!\n받는 사람을 입력한 후 시도해주세요.";
         }
         return "오류가 발생했습니다!\n다시 시도해주세요.";
+    };
+
+    // 키워드 추가
+    const handleAddKeyword = () => {
+        if (newKeyword.trim() && !excludedKeywords.includes(newKeyword.trim())) {
+            setExcludedKeywords([...excludedKeywords, newKeyword.trim()]);
+            setNewKeyword("");
+            setIsAddingKeyword(false);
+        }
+    };
+
+    // 키워드 삭제
+    const handleDeleteKeyword = (keyword: string) => {
+        setExcludedKeywords(excludedKeywords.filter((k) => k !== keyword));
+    };
+
+    // 키워드 입력 중 엔터 키 처리
+    const handleKeywordKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter") {
+            handleAddKeyword();
+        } else if (e.key === "Escape") {
+            setNewKeyword("");
+            setIsAddingKeyword(false);
+        }
+    };
+
+    // 최종 적용 - 익스텐션 내용을 메일 화면에 적용
+    const handleApplyContent = () => {
+        console.log("[Modal] 최종 적용 버튼 클릭");
+        console.log("[Modal] 적용할 내용:", mailContent);
+
+        if (!mailContent || !mailContent.trim()) {
+            setErrorModal({
+                isVisible: true,
+                message: "내용이 비어있습니다!\n적용할 내용을 입력해주세요.",
+            });
+            return;
+        }
+
+        chrome.runtime.sendMessage(
+            { action: "applyContent", content: mailContent },
+            (response) => {
+                console.log("[Modal] Response from background:", response);
+
+                if (response?.success) {
+                    console.log("✅ 메일 내용 적용 성공!");
+                    // 성공 시 창 닫기 또는 사용자에게 알림
+                    alert("메일 내용이 적용되었습니다!");
+                } else {
+                    const errorMsg = response?.error || "메일 편집기를 찾을 수 없습니다.";
+                    console.error("❌ 적용 실패:", errorMsg);
+
+                    setErrorModal({
+                        isVisible: true,
+                        message: getErrorMessage(errorMsg),
+                    });
+                }
+            }
+        );
     };
 
     return (
@@ -230,7 +345,11 @@ export const Modal: React.FC = () => {
                             <option>영어</option>
                         </LanguageSelect>
                     </Row>
-                    <Textarea placeholder="메일 본문 작성" />
+                    <Textarea
+                        placeholder="메일 본문 작성"
+                        value={mailContent}
+                        onChange={(e) => setMailContent(e.target.value)}
+                    />
                 </Section>
 
                 <Section>
@@ -253,18 +372,36 @@ export const Modal: React.FC = () => {
                 <Section>
                     <Label>제외 키워드</Label>
                     <TagGroup>
-                        {["진짜", "레알", "에바"].map((keyword, idx) => (
+                        {excludedKeywords.map((keyword, idx) => (
                             <KeywordTag key={idx}>
                                 {keyword}
-                                <TagDeleteButton>×</TagDeleteButton>
+                                <TagDeleteButton onClick={() => handleDeleteKeyword(keyword)}>×</TagDeleteButton>
                             </KeywordTag>
                         ))}
-                        <AddKeywordButton>+</AddKeywordButton>
+                        {isAddingKeyword ? (
+                            <Input
+                                type="text"
+                                value={newKeyword}
+                                onChange={(e) => setNewKeyword(e.target.value)}
+                                onKeyDown={handleKeywordKeyPress}
+                                onBlur={handleAddKeyword}
+                                placeholder="키워드 입력"
+                                autoFocus
+                                style={{
+                                    width: "80px",
+                                    height: "28px",
+                                    padding: "4px 8px",
+                                    fontSize: "0.85rem",
+                                }}
+                            />
+                        ) : (
+                            <AddKeywordButton onClick={() => setIsAddingKeyword(true)}>+</AddKeywordButton>
+                        )}
                     </TagGroup>
                 </Section>
 
                 <Footer style={{ justifyContent: "center", marginTop: "12px" }}>
-                    <FinalButton>
+                    <FinalButton onClick={handleApplyContent}>
                         <WhiteLogo src="/logo.png" />
                         최종 적용
                     </FinalButton>

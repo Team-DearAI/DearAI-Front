@@ -33,6 +33,7 @@ export default function Address() {
     const [editingContact, setEditingContact] = useState<Contact | null>(null);
     const [groups, setGroups] = useState<string[]>([]);
     const [selectedGroup, setSelectedGroup] = useState("전체");
+    const [selectedRecipient, setSelectedRecipient] = useState<string | null>(null);
 
     // 삭제 함수
     const handleDelete = async (contactId: string) => {
@@ -242,7 +243,12 @@ export default function Address() {
                                     </tr>
                                 ) : (
                                     filteredContacts.map((c) => (
-                                        <AddressRow key={c.id}>
+                                        <AddressRow
+                                            key={c.id}
+                                            style={{
+                                                backgroundColor: selectedRecipient === c.email ? "#e8f5f1" : "transparent"
+                                            }}
+                                        >
                                             <AddressCell>
                                                 {c.group ?? "-"}
                                             </AddressCell>
@@ -250,9 +256,12 @@ export default function Address() {
                                             <AddressCell>{c.email}</AddressCell>
                                             <AddressCell>
                                                 <SendMailButton
-                                                    onClick={() =>
-                                                        navigate("/modal")
-                                                    }
+                                                    onClick={() => {
+                                                        setSelectedRecipient(c.email);
+                                                        navigate("/modal", {
+                                                            state: { recipient: c.name }
+                                                        });
+                                                    }}
                                                 >
                                                     선택
                                                 </SendMailButton>
