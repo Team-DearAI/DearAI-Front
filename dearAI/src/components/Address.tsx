@@ -258,8 +258,13 @@ export default function Address() {
                                                 <SendMailButton
                                                     onClick={() => {
                                                         setSelectedRecipient(c.email);
-                                                        navigate("/modal", {
-                                                            state: { recipient: c.name }
+                                                        const recipientText = `${c.name}(${c.email})`;
+                                                        // Chrome storage에 직접 저장
+                                                        chrome.storage.local.set({
+                                                            draftRecipient: recipientText
+                                                        }).then(() => {
+                                                            console.log('[Address] 받는 사람 저장:', recipientText);
+                                                            navigate("/modal");
                                                         });
                                                     }}
                                                 >

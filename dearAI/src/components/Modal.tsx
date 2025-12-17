@@ -1,9 +1,9 @@
 declare const chrome: {
     storage: {
         local: {
-            clear: (callback?: () => void) => void;
-            get: (keys: string[], callback: (result: any) => void) => void;
-            set: (items: { [key: string]: any }, callback?: () => void) => void;
+            clear: () => Promise<void>;
+            get: (keys: string | string[]) => Promise<{ [key: string]: any }>;
+            set: (items: { [key: string]: any }) => Promise<void>;
         };
     };
     runtime: {
@@ -21,6 +21,7 @@ declare const chrome: {
 };
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import axios from "axios";
 import Logo from "./Logo";
 import CloseButton from "./CloseButton";
 import Tooltip from "./Tooltip";
@@ -61,10 +62,25 @@ export const Modal: React.FC = () => {
     const [logoClickCount, setLogoClickCount] = React.useState(0);
     const [recipient, setRecipient] = React.useState<string>("");
     const [mailContent, setMailContent] = React.useState<string>("");
+    const [title, setTitle] = React.useState<string>("");
+    const [guide, setGuide] = React.useState<string>("");
+    const [option, setOption] = React.useState<string>(""); // 톤/스타일
+    const [language, setLanguage] = React.useState<string>(""); // 언어
     const [showTooltip, setShowTooltip] = React.useState(false);
-    const [excludedKeywords, setExcludedKeywords] = React.useState<string[]>(["진짜", "레알", "에바"]);
+    const [excludedKeywords, setExcludedKeywords] = React.useState<string[]>([]);
     const [isAddingKeyword, setIsAddingKeyword] = React.useState(false);
     const [newKeyword, setNewKeyword] = React.useState("");
+    const [isLoadingResult, setIsLoadingResult] = React.useState(false);
+
+    // 검수 히스토리 관리
+    type HistoryItem = {
+        guide: string;
+        result: string;
+        title: string;
+        timestamp: Date;
+    };
+    const [history, setHistory] = React.useState<HistoryItem[]>([]);
+    const [currentHistoryIndex, setCurrentHistoryIndex] = React.useState<number>(-1);
     const [errorModal, setErrorModal] = React.useState<{
         isVisible: boolean;
         message: string;
@@ -73,9 +89,9 @@ export const Modal: React.FC = () => {
         message: "",
     });
 
-    // 컴포넌트 마운트 시 저장된 내용 불러오기
+    // 컴포넌트 마운트 시 및 location 변경 시 저장된 내용 불러오기
     React.useEffect(() => {
-        chrome.storage.local.get(['draftRecipient', 'draftMailContent'], (result) => {
+        chrome.storage.local.get(['draftRecipient', 'draftMailContent']).then((result) => {
             if (result.draftRecipient) {
                 setRecipient(result.draftRecipient);
                 console.log('[Modal] 저장된 받는 사람 불러옴:', result.draftRecipient);
@@ -85,22 +101,41 @@ export const Modal: React.FC = () => {
                 console.log('[Modal] 저장된 메일 내용 불러옴:', result.draftMailContent.substring(0, 50));
             }
         });
+    }, [location]);
+
+    // 제외 키워드 불러오기 (GET /filter/keywords)
+    React.useEffect(() => {
+        const fetchFilterKeywords = async () => {
+            try {
+                const tokenData = await chrome.storage.local.get("accessToken");
+                const accessToken = tokenData.accessToken;
+
+                if (!accessToken) {
+                    console.log('[Modal] AccessToken 없음 - 제외 키워드 불러오기 건너뜀');
+                    return;
+                }
+
+                const res = await axios.get("https://dearai.cspark.my/filter/keywords", {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                });
+
+                setExcludedKeywords(res.data.filter_keywords || []);
+                console.log("📥 [Modal] 제외 키워드 불러오기 성공:", res.data.filter_keywords);
+            } catch (err) {
+                console.error("❌ [Modal] 제외 키워드 불러오기 실패:", err);
+            }
+        };
+
+        fetchFilterKeywords();
     }, []);
 
-    // 주소록에서 받는 사람 정보를 받아오는 useEffect
-    React.useEffect(() => {
-        const state = location.state as { recipient?: string } | null;
-        if (state?.recipient) {
-            setRecipient(state.recipient);
-            // 상태를 사용한 후 초기화 (뒤로가기 시 재사용 방지)
-            navigate(location.pathname, { replace: true, state: {} });
-        }
-    }, [location, navigate]);
 
     // 받는 사람이 변경될 때마다 자동 저장
     React.useEffect(() => {
         if (recipient) {
-            chrome.storage.local.set({ draftRecipient: recipient }, () => {
+            chrome.storage.local.set({ draftRecipient: recipient }).then(() => {
                 console.log('[Modal] 받는 사람 자동 저장:', recipient);
             });
         }
@@ -109,7 +144,7 @@ export const Modal: React.FC = () => {
     // 메일 내용이 변경될 때마다 자동 저장
     React.useEffect(() => {
         if (mailContent) {
-            chrome.storage.local.set({ draftMailContent: mailContent }, () => {
+            chrome.storage.local.set({ draftMailContent: mailContent }).then(() => {
                 console.log('[Modal] 메일 내용 자동 저장:', mailContent.substring(0, 50));
             });
         }
@@ -182,18 +217,94 @@ export const Modal: React.FC = () => {
         return "오류가 발생했습니다!\n다시 시도해주세요.";
     };
 
-    // 키워드 추가
-    const handleAddKeyword = () => {
-        if (newKeyword.trim() && !excludedKeywords.includes(newKeyword.trim())) {
-            setExcludedKeywords([...excludedKeywords, newKeyword.trim()]);
+    // 키워드 추가 (POST /filter/keywords)
+    const handleAddKeyword = async () => {
+        if (!newKeyword.trim()) {
+            return;
+        }
+
+        if (excludedKeywords.includes(newKeyword.trim())) {
+            setErrorModal({
+                isVisible: true,
+                message: "이미 등록된 키워드입니다!",
+            });
+            return;
+        }
+
+        try {
+            const tokenData = await chrome.storage.local.get("accessToken");
+            const accessToken = tokenData.accessToken;
+
+            if (!accessToken) {
+                setErrorModal({
+                    isVisible: true,
+                    message: "로그인이 필요합니다!",
+                });
+                return;
+            }
+
+            const res = await axios.post(
+                "https://dearai.cspark.my/filter/keywords",
+                {
+                    filter_keywords: [newKeyword.trim()],
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                }
+            );
+
+            setExcludedKeywords(res.data.filter_keywords || []);
             setNewKeyword("");
             setIsAddingKeyword(false);
+            console.log("✅ [Modal] 키워드 추가 성공:", res.data.filter_keywords);
+        } catch (err) {
+            console.error("❌ [Modal] 키워드 추가 실패:", err);
+            setErrorModal({
+                isVisible: true,
+                message: "키워드 추가에 실패했습니다!\n다시 시도해주세요.",
+            });
         }
     };
 
-    // 키워드 삭제
-    const handleDeleteKeyword = (keyword: string) => {
-        setExcludedKeywords(excludedKeywords.filter((k) => k !== keyword));
+    // 키워드 삭제 (PUT /filter/keywords)
+    const handleDeleteKeyword = async (keywordToDelete: string) => {
+        try {
+            const tokenData = await chrome.storage.local.get("accessToken");
+            const accessToken = tokenData.accessToken;
+
+            if (!accessToken) {
+                setErrorModal({
+                    isVisible: true,
+                    message: "로그인이 필요합니다!",
+                });
+                return;
+            }
+
+            const updatedKeywords = excludedKeywords.filter((k) => k !== keywordToDelete);
+
+            await axios.put(
+                "https://dearai.cspark.my/filter/keywords",
+                {
+                    filter_keywords: updatedKeywords,
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                }
+            );
+
+            setExcludedKeywords(updatedKeywords);
+            console.log("✅ [Modal] 키워드 삭제 성공");
+        } catch (err) {
+            console.error("❌ [Modal] 키워드 삭제 실패:", err);
+            setErrorModal({
+                isVisible: true,
+                message: "키워드 삭제에 실패했습니다!\n다시 시도해주세요.",
+            });
+        }
     };
 
     // 키워드 입력 중 엔터 키 처리
@@ -203,6 +314,124 @@ export const Modal: React.FC = () => {
         } else if (e.key === "Escape") {
             setNewKeyword("");
             setIsAddingKeyword(false);
+        }
+    };
+
+    // 히스토리 이전으로 이동 (<)
+    const handlePreviousHistory = () => {
+        if (currentHistoryIndex > 0) {
+            const newIndex = currentHistoryIndex - 1;
+            setCurrentHistoryIndex(newIndex);
+            const historyItem = history[newIndex];
+            setMailContent(historyItem.result);
+            setTitle(historyItem.title);
+            setGuide(historyItem.guide);
+            console.log(`[Modal] 히스토리 이동: ${newIndex + 1}/${history.length}`);
+        }
+    };
+
+    // 히스토리 다음으로 이동 (>)
+    const handleNextHistory = () => {
+        if (currentHistoryIndex < history.length - 1) {
+            const newIndex = currentHistoryIndex + 1;
+            setCurrentHistoryIndex(newIndex);
+            const historyItem = history[newIndex];
+            setMailContent(historyItem.result);
+            setTitle(historyItem.title);
+            setGuide(historyItem.guide);
+            console.log(`[Modal] 히스토리 이동: ${newIndex + 1}/${history.length}`);
+        }
+    };
+
+    // 메일 검수 API 호출 (결과 받아오기)
+    const handleGetResult = async () => {
+        console.log("[Modal] 결과 받아오기 버튼 클릭");
+
+        if (!mailContent || !mailContent.trim()) {
+            setErrorModal({
+                isVisible: true,
+                message: "내용이 비어있습니다!\n메일 내용을 입력해주세요.",
+            });
+            return;
+        }
+
+        setIsLoadingResult(true);
+
+        try {
+            const tokenData = await chrome.storage.local.get("accessToken");
+            const accessToken = tokenData.accessToken;
+
+            if (!accessToken) {
+                setErrorModal({
+                    isVisible: true,
+                    message: "로그인이 필요합니다!",
+                });
+                return;
+            }
+
+            const response = await axios.post(
+                "https://dearai.cspark.my/filter/",
+                {
+                    email: recipient,
+                    recipient: recipient,
+                    title: title,
+                    data: mailContent,
+                    guide: guide,
+                    option: option,
+                    language: language,
+                    filter_keywords: excludedKeywords,
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                }
+            );
+
+            console.log("✅ [Modal] 메일 검수 결과:", response.data);
+
+            // 결과를 메일 내용에 반영 및 히스토리에 추가
+            if (response.data.result) {
+                const result = response.data.result;
+
+                // API 응답: { mail: "...", title: "..." }
+                const mailContent = result.mail || "";
+                const mailTitle = result.title || "";
+
+                // 제목이 있으면 제목 필드에 설정
+                if (mailTitle) {
+                    setTitle(mailTitle);
+                }
+
+                // 히스토리에 추가 (mail 내용과 title 저장)
+                const newHistoryItem: HistoryItem = {
+                    guide: guide,
+                    result: mailContent,
+                    title: mailTitle,
+                    timestamp: new Date(),
+                };
+
+                setHistory(prev => {
+                    const newHistory = [...prev, newHistoryItem];
+                    // 최신 히스토리로 인덱스 이동
+                    setCurrentHistoryIndex(newHistory.length - 1);
+                    return newHistory;
+                });
+
+                // 메일 내용 덮어쓰기
+                setMailContent(mailContent);
+                console.log("✅ [Modal] 검수 결과 히스토리 저장 완료");
+                console.log("  - 제목:", mailTitle);
+                console.log("  - 내용:", mailContent.substring(0, 50) + "...");
+            }
+        } catch (err) {
+            console.error("❌ [Modal] 메일 검수 실패:", err);
+            setErrorModal({
+                isVisible: true,
+                message: "메일 검수에 실패했습니다!\n다시 시도해주세요.",
+            });
+        } finally {
+            setIsLoadingResult(false);
         }
     };
 
@@ -226,8 +455,6 @@ export const Modal: React.FC = () => {
 
                 if (response?.success) {
                     console.log("✅ 메일 내용 적용 성공!");
-                    // 성공 시 창 닫기 또는 사용자에게 알림
-                    alert("메일 내용이 적용되었습니다!");
                 } else {
                     const errorMsg = response?.error || "메일 편집기를 찾을 수 없습니다.";
                     console.error("❌ 적용 실패:", errorMsg);
@@ -258,7 +485,7 @@ export const Modal: React.FC = () => {
                                 const newCount = prev + 1;
                                 if (newCount >= 4) {
                                     if (chrome?.storage?.local) {
-                                        chrome.storage.local.clear(() => {
+                                        chrome.storage.local.clear().then(() => {
                                             console.log(
                                                 "Logged out via logo clicks"
                                             );
@@ -299,6 +526,8 @@ export const Modal: React.FC = () => {
                         <Input
                             type="text"
                             placeholder="메일 제목 입력"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
                             style={{ flex: 1, marginRight: "8px" }}
                         />
                         <InfoButton
@@ -322,7 +551,13 @@ export const Modal: React.FC = () => {
                             "감성적인",
                         ].map((label, idx) => (
                             <CheckboxLabel key={idx}>
-                                <input type="radio" name="tone" />
+                                <input
+                                    type="radio"
+                                    name="tone"
+                                    value={label}
+                                    checked={option === label}
+                                    onChange={(e) => setOption(e.target.value)}
+                                />
                                 {label}
                             </CheckboxLabel>
                         ))}
@@ -337,12 +572,16 @@ export const Modal: React.FC = () => {
                         }}
                     >
                         <Label>내용</Label>
-                        <LanguageSelect style={{ width: "120px" }}>
-                            <option disabled selected>
+                        <LanguageSelect
+                            style={{ width: "120px" }}
+                            value={language}
+                            onChange={(e) => setLanguage(e.target.value)}
+                        >
+                            <option value="" disabled>
                                 언어 선택
                             </option>
-                            <option>한국어</option>
-                            <option>영어</option>
+                            <option value="한국어">한국어</option>
+                            <option value="영어">영어</option>
                         </LanguageSelect>
                     </Row>
                     <Textarea
@@ -357,15 +596,41 @@ export const Modal: React.FC = () => {
                     <Input
                         type="text"
                         placeholder="요청 사항을 입력해 주세요."
+                        value={guide}
+                        onChange={(e) => setGuide(e.target.value)}
                     />
                     <NavButtonGroup>
-                        <div>
-                            <NavButton>&lt;</NavButton>
-                            <NavButton style={{ marginRight: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                            <NavButton
+                                onClick={handlePreviousHistory}
+                                disabled={currentHistoryIndex <= 0}
+                                style={{
+                                    opacity: currentHistoryIndex <= 0 ? 0.3 : 1,
+                                    cursor: currentHistoryIndex <= 0 ? "not-allowed" : "pointer"
+                                }}
+                            >
+                                &lt;
+                            </NavButton>
+                            <NavButton
+                                onClick={handleNextHistory}
+                                disabled={currentHistoryIndex >= history.length - 1}
+                                style={{
+                                    marginRight: 0,
+                                    opacity: currentHistoryIndex >= history.length - 1 ? 0.3 : 1,
+                                    cursor: currentHistoryIndex >= history.length - 1 ? "not-allowed" : "pointer"
+                                }}
+                            >
                                 &gt;
                             </NavButton>
+                            {history.length > 0 && (
+                                <span style={{ fontSize: "0.85rem", color: "#666" }}>
+                                    {currentHistoryIndex + 1} / {history.length}
+                                </span>
+                            )}
                         </div>
-                        <ResultButton>결과 받아오기</ResultButton>
+                        <ResultButton onClick={handleGetResult} disabled={isLoadingResult}>
+                            {isLoadingResult ? "검수 중..." : "결과 받아오기"}
+                        </ResultButton>
                     </NavButtonGroup>
                 </Section>
 

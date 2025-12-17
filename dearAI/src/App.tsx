@@ -21,6 +21,7 @@ import { useEffect, useState } from "react";
 import Login from "./components/Login";
 import Modal from "./components/Modal";
 import Address from "./components/Address";
+import Filter from "./components/Filter";
 
 const App = () => {
     const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
@@ -44,6 +45,10 @@ const App = () => {
                 <Route
                     path="/address"
                     element={isLoggedIn ? <Address /> : <Login />}
+                />
+                <Route
+                    path="/filter"
+                    element={isLoggedIn ? <Filter /> : <Login />}
                 />
             </Routes>
         </HashRouter>
