@@ -3,6 +3,16 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import LogoImage from "./Logo";
 import CloseBtn from "./CloseButton";
+import ErrorModal from "./ErrorModal";
+import {
+    secureLog,
+    secureError,
+    isValidToken,
+    isValidKeyword,
+    isSafeInput,
+    validateKeywordsResponse,
+    API_BASE_URL,
+} from "../utils/security";
 import {
     ModalContainer,
     HeaderBar,
@@ -26,6 +36,13 @@ export default function Filter() {
     const [keywords, setKeywords] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [newKeyword, setNewKeyword] = useState("");
+    const [errorModal, setErrorModal] = useState<{
+        isVisible: boolean;
+        message: string;
+    }>({
+        isVisible: false,
+        message: "",
+    });
 
     // 키워드 목록 조회
     const fetchKeywords = async () => {
@@ -33,21 +50,27 @@ export default function Filter() {
             const tokenData = await chrome.storage.local.get("accessToken");
             const accessToken = tokenData.accessToken;
 
-            if (!accessToken) {
-                console.error("⚠️ AccessToken 없음 → 로그인 필요");
+            if (!isValidToken(accessToken)) {
+                secureLog("No valid token - skipping keyword fetch");
                 return;
             }
 
-            const res = await axios.get("https://dearai.cspark.my/filter/keywords", {
+            const res = await axios.get(`${API_BASE_URL}/filter/keywords`, {
                 headers: {
                     Authorization: `Bearer ${accessToken}`,
                 },
             });
 
+            // API 응답 검증
+            if (!validateKeywordsResponse(res.data)) {
+                secureError("Invalid keywords response format");
+                return;
+            }
+
             setKeywords(res.data.filter_keywords || []);
-            console.log("📥 불러온 필터 키워드:", res.data.filter_keywords);
+            secureLog("Filter keywords loaded");
         } catch (err) {
-            console.error("❌ 필터 키워드 불러오기 실패:", err);
+            secureError("Failed to load filter keywords", err);
         } finally {
             setLoading(false);
         }
@@ -56,12 +79,35 @@ export default function Filter() {
     // 키워드 추가
     const handleAddKeyword = async () => {
         if (!newKeyword.trim()) {
-            alert("키워드를 입력해주세요.");
+            setErrorModal({
+                isVisible: true,
+                message: "키워드를 입력해주세요!",
+            });
+            return;
+        }
+
+        if (!isValidKeyword(newKeyword)) {
+            setErrorModal({
+                isVisible: true,
+                message: "키워드는 1~50자 이내로 입력해주세요!",
+            });
+            return;
+        }
+
+        // 보안 검증: XSS, SQL Injection 패턴 감지
+        if (!isSafeInput(newKeyword, 50)) {
+            setErrorModal({
+                isVisible: true,
+                message: "유효하지 않은 키워드입니다!\n특수문자를 확인해주세요.",
+            });
             return;
         }
 
         if (keywords.includes(newKeyword.trim())) {
-            alert("이미 등록된 키워드입니다.");
+            setErrorModal({
+                isVisible: true,
+                message: "이미 등록된 키워드입니다!",
+            });
             return;
         }
 
@@ -69,13 +115,16 @@ export default function Filter() {
             const tokenData = await chrome.storage.local.get("accessToken");
             const accessToken = tokenData.accessToken;
 
-            if (!accessToken) {
-                alert("AccessToken 없음 → 로그인 필요");
+            if (!isValidToken(accessToken)) {
+                setErrorModal({
+                    isVisible: true,
+                    message: "로그인이 필요합니다!",
+                });
                 return;
             }
 
             const res = await axios.post(
-                "https://dearai.cspark.my/filter/keywords",
+                `${API_BASE_URL}/filter/keywords`,
                 {
                     filter_keywords: [newKeyword.trim()],
                 },
@@ -86,12 +135,25 @@ export default function Filter() {
                 }
             );
 
+            // API 응답 검증
+            if (!validateKeywordsResponse(res.data)) {
+                secureError("Invalid keywords response format");
+                setErrorModal({
+                    isVisible: true,
+                    message: "서버 응답 오류!\n다시 시도해주세요.",
+                });
+                return;
+            }
+
             setKeywords(res.data.filter_keywords || []);
             setNewKeyword("");
-            console.log("✅ 키워드 추가 성공:", res.data.filter_keywords);
+            secureLog("Keyword added successfully");
         } catch (err) {
-            alert("키워드 추가 실패");
-            console.error("❌ 키워드 추가 실패:", err);
+            setErrorModal({
+                isVisible: true,
+                message: "키워드 추가에 실패했습니다!\n다시 시도해주세요.",
+            });
+            secureError("Failed to add keyword", err);
         }
     };
 
@@ -101,15 +163,18 @@ export default function Filter() {
             const tokenData = await chrome.storage.local.get("accessToken");
             const accessToken = tokenData.accessToken;
 
-            if (!accessToken) {
-                alert("AccessToken 없음 → 로그인 필요");
+            if (!isValidToken(accessToken)) {
+                setErrorModal({
+                    isVisible: true,
+                    message: "로그인이 필요합니다!",
+                });
                 return;
             }
 
             const updatedKeywords = keywords.filter((k) => k !== keywordToDelete);
 
             await axios.put(
-                "https://dearai.cspark.my/filter/keywords",
+                `${API_BASE_URL}/filter/keywords`,
                 {
                     filter_keywords: updatedKeywords,
                 },
@@ -121,10 +186,13 @@ export default function Filter() {
             );
 
             setKeywords(updatedKeywords);
-            console.log("✅ 키워드 삭제 성공");
+            secureLog("Keyword deleted successfully");
         } catch (err) {
-            alert("키워드 삭제 실패");
-            console.error("❌ 키워드 삭제 실패:", err);
+            setErrorModal({
+                isVisible: true,
+                message: "키워드 삭제에 실패했습니다!\n다시 시도해주세요.",
+            });
+            secureError("Failed to delete keyword", err);
         }
     };
 
@@ -175,7 +243,7 @@ export default function Filter() {
                             placeholder="제외할 키워드를 입력하세요"
                             value={newKeyword}
                             onChange={(e) => setNewKeyword(e.target.value)}
-                            onKeyPress={(e) => {
+                            onKeyDown={(e) => {
                                 if (e.key === "Enter") {
                                     handleAddKeyword();
                                 }
@@ -213,6 +281,13 @@ export default function Filter() {
                     )}
                 </InnerContainer>
             </ModalContainer>
+
+            {/* Error Modal */}
+            <ErrorModal
+                isVisible={errorModal.isVisible}
+                onClose={() => setErrorModal({ isVisible: false, message: "" })}
+                message={errorModal.message}
+            />
         </div>
     );
 }

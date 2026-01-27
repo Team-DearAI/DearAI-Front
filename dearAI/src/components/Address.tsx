@@ -2,7 +2,16 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import type { Contact, ContactApiResponse } from "../types/Contact";
+import {
+    secureLog,
+    secureError,
+    isValidToken,
+    validateContactsResponse,
+    isSafeInput,
+    API_BASE_URL,
+} from "../utils/security";
 import AddAddress from "./AddAddress";
+import ErrorModal from "./ErrorModal";
 import LogoImage from "./Logo";
 import CloseBtn from "./CloseButton";
 import {
@@ -22,7 +31,6 @@ import {
     InnerContainer,
     AddressHeaderLabel,
     GroupSelect,
-    SearchButton,
 } from "../styles/AddressStyles";
 
 export default function Address() {
@@ -34,18 +42,38 @@ export default function Address() {
     const [groups, setGroups] = useState<string[]>([]);
     const [selectedGroup, setSelectedGroup] = useState("전체");
     const [selectedRecipient, setSelectedRecipient] = useState<string | null>(null);
+    const [searchKeyword, setSearchKeyword] = useState("");
+    const [errorModal, setErrorModal] = useState<{
+        isVisible: boolean;
+        message: string;
+    }>({
+        isVisible: false,
+        message: "",
+    });
 
     // 삭제 함수
     const handleDelete = async (contactId: string) => {
+        // contactId 검증
+        if (!isSafeInput(contactId, 100)) {
+            setErrorModal({
+                isVisible: true,
+                message: "유효하지 않은 요청입니다!",
+            });
+            return;
+        }
+
         try {
             const tokenData = await chrome.storage.local.get("accessToken");
             const accessToken = tokenData.accessToken;
-            if (!accessToken) {
-                alert("AccessToken 없음 → 로그인 필요");
+            if (!isValidToken(accessToken)) {
+                setErrorModal({
+                    isVisible: true,
+                    message: "로그인이 필요합니다!",
+                });
                 return;
             }
             await axios.delete(
-                `https://dearai.cspark.my/contacts/${contactId}`,
+                `${API_BASE_URL}/contacts/${contactId}`,
                 {
                     headers: {
                         Authorization: `Bearer ${accessToken}`,
@@ -53,9 +81,13 @@ export default function Address() {
                 }
             );
             setContacts((prev) => prev.filter((c) => c.id !== contactId));
+            secureLog("Contact deleted successfully");
         } catch (err) {
-            alert("주소록 삭제 실패");
-            console.error("❌ 주소록 삭제 실패:", err);
+            setErrorModal({
+                isVisible: true,
+                message: "주소록 삭제에 실패했습니다!\n다시 시도해주세요.",
+            });
+            secureError("Failed to delete contact", err);
         }
     };
 
@@ -64,18 +96,18 @@ export default function Address() {
         setEditingContact(contact);
     };
 
-    // 📌 주소록 API 불러오기
+    // 주소록 API 불러오기
     const fetchContacts = async () => {
         try {
             const tokenData = await chrome.storage.local.get("accessToken");
             const accessToken = tokenData.accessToken;
 
-            if (!accessToken) {
-                console.error("⚠️ AccessToken 없음 → 로그인 필요");
+            if (!isValidToken(accessToken)) {
+                secureLog("No valid token - skipping contacts fetch");
                 return;
             }
 
-            const res = await axios.get("https://dearai.cspark.my/contacts/", {
+            const res = await axios.get(`${API_BASE_URL}/contacts/`, {
                 headers: {
                     Authorization: `Bearer ${accessToken}`,
                 },
@@ -89,6 +121,12 @@ export default function Address() {
             // 무조건 배열화
             const arr = Array.isArray(normalized) ? normalized : [normalized];
 
+            // API 응답 검증
+            if (arr.length > 0 && !validateContactsResponse(arr)) {
+                secureError("Invalid contacts response format");
+                return;
+            }
+
             setContacts(
                 arr.map((c: ContactApiResponse) => ({
                     id: c.id,
@@ -99,10 +137,10 @@ export default function Address() {
                 }))
             );
 
-            console.log("📥 불러온 주소록 데이터:", arr);
+            secureLog("Contacts loaded successfully");
 
             const groupRes = await axios.get(
-                "https://dearai.cspark.my/contacts/groups",
+                `${API_BASE_URL}/contacts/groups`,
                 {
                     headers: {
                         Authorization: `Bearer ${accessToken}`,
@@ -111,7 +149,7 @@ export default function Address() {
             );
             setGroups(groupRes.data.groups || []);
         } catch (err) {
-            console.error("❌ 주소록 불러오기 실패:", err);
+            secureError("Failed to load contacts", err);
         } finally {
             setLoading(false);
         }
@@ -121,10 +159,19 @@ export default function Address() {
         fetchContacts();
     }, []);
 
-    const filteredContacts =
-        selectedGroup === "전체"
-            ? contacts
-            : contacts.filter((c) => c.group === selectedGroup);
+    const filteredContacts = contacts.filter((c) => {
+        // 그룹 필터
+        const groupMatch = selectedGroup === "전체" || c.group === selectedGroup;
+
+        // 검색어 필터 (그룹, 이름, 이메일 중 하나라도 포함되면 true)
+        const keyword = searchKeyword.trim().toLowerCase();
+        const searchMatch = keyword === "" ||
+            (c.group?.toLowerCase().includes(keyword) ?? false) ||
+            c.name.toLowerCase().includes(keyword) ||
+            c.email.toLowerCase().includes(keyword);
+
+        return groupMatch && searchMatch;
+    });
 
     return (
         <div
@@ -189,33 +236,11 @@ export default function Address() {
                     <div
                         style={{ display: "flex", flexShrink: 0, gap: "10px" }}
                     >
-                        <div style={{ display: "flex" }}>
-                            <SearchInput placeholder="검색어를 입력해 주세요." />
-                            <SearchButton>
-                                <svg
-                                    width="16"
-                                    height="16"
-                                    viewBox="0 0 16 16"
-                                    fill="none"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                >
-                                    <path
-                                        d="M7 12C9.76142 12 12 9.76142 12 7C12 4.23858 9.76142 2 7 2C4.23858 2 2 4.23858 2 7C2 9.76142 4.23858 12 7 12Z"
-                                        stroke="#666"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                    />
-                                    <path
-                                        d="M10.5 10.5L14 14"
-                                        stroke="#666"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                    />
-                                </svg>
-                            </SearchButton>
-                        </div>
+                        <SearchInput
+                            placeholder="검색어를 입력해 주세요."
+                            value={searchKeyword}
+                            onChange={(e) => setSearchKeyword(e.target.value)}
+                        />
                         <AddButton onClick={() => setShowAddModal(true)}>
                             + 추가
                         </AddButton>
@@ -259,11 +284,10 @@ export default function Address() {
                                                     onClick={() => {
                                                         setSelectedRecipient(c.email);
                                                         const recipientText = `${c.name}(${c.email})`;
-                                                        // Chrome storage에 직접 저장
                                                         chrome.storage.local.set({
                                                             draftRecipient: recipientText
                                                         }).then(() => {
-                                                            console.log('[Address] 받는 사람 저장:', recipientText);
+                                                            secureLog("Recipient saved");
                                                             navigate("/modal");
                                                         });
                                                     }}
@@ -307,6 +331,13 @@ export default function Address() {
                     />
                 )
             )}
+
+            {/* Error Modal */}
+            <ErrorModal
+                isVisible={errorModal.isVisible}
+                onClose={() => setErrorModal({ isVisible: false, message: "" })}
+                message={errorModal.message}
+            />
         </div>
     );
 }

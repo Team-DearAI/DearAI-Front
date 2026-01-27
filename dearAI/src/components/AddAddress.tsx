@@ -13,6 +13,15 @@ import {
     Footer,
 } from "../styles/AddAddressStyles";
 import type { Contact } from "../types/Contact";
+import {
+    secureLog,
+    secureError,
+    isValidEmail,
+    isValidName,
+    isValidGroup,
+    isValidToken,
+    API_BASE_URL,
+} from "../utils/security";
 
 const AddAddress: React.FC<{
     onClose: () => void;
@@ -23,13 +32,14 @@ const AddAddress: React.FC<{
     const [email, setEmail] = useState(contact?.email || "");
     const [group, setGroup] = useState(contact?.group || "");
     const [groups, setGroups] = useState<string[]>([]);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         chrome.storage.local.get("accessToken", async ({ accessToken }) => {
-            if (!accessToken) return;
+            if (!isValidToken(accessToken)) return;
             try {
                 const response = await fetch(
-                    "https://dearai.cspark.my/contacts/groups",
+                    `${API_BASE_URL}/contacts/groups`,
                     {
                         headers: {
                             Authorization: `Bearer ${accessToken}`,
@@ -40,8 +50,9 @@ const AddAddress: React.FC<{
                 if (data.groups) {
                     setGroups(data.groups);
                 }
-            } catch (error) {
-                console.error("Failed to fetch groups:", error);
+                secureLog("Groups loaded");
+            } catch (err) {
+                secureError("Failed to fetch groups", err);
             }
         });
     }, []);
@@ -51,23 +62,41 @@ const AddAddress: React.FC<{
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError(null);
+
+        // 입력값 검증
+        if (!isValidName(name)) {
+            setError("이름은 1~50자의 한글, 영문, 숫자만 입력 가능합니다.");
+            return;
+        }
+
+        if (!isValidEmail(email)) {
+            setError("올바른 이메일 형식을 입력해주세요.");
+            return;
+        }
+
+        if (!isValidGroup(group)) {
+            setError("그룹명은 30자 이내의 한글, 영문, 숫자만 입력 가능합니다.");
+            return;
+        }
 
         chrome.storage.local.get("accessToken", async ({ accessToken }) => {
-            if (!accessToken) {
-                console.error("No access token found");
+            if (!isValidToken(accessToken)) {
+                secureError("No valid access token found");
+                setError("로그인이 필요합니다.");
                 return;
             }
             const payload = {
-                name,
-                email,
-                group,
+                name: name.trim(),
+                email: email.trim(),
+                group: group.trim(),
             };
 
             try {
                 if (contact && contact.id) {
                     // Update existing contact
                     await fetch(
-                        `https://dearai.cspark.my/contacts/${contact.id}`,
+                        `${API_BASE_URL}/contacts/${contact.id}`,
                         {
                             method: "PATCH",
                             headers: {
@@ -77,9 +106,10 @@ const AddAddress: React.FC<{
                             body: JSON.stringify(payload),
                         }
                     );
+                    secureLog("Contact updated successfully");
                 } else {
                     // Create new contact
-                    await fetch("https://dearai.cspark.my/contacts/", {
+                    await fetch(`${API_BASE_URL}/contacts/`, {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
@@ -87,11 +117,13 @@ const AddAddress: React.FC<{
                         },
                         body: JSON.stringify(payload),
                     });
+                    secureLog("Contact created successfully");
                 }
                 onSaved?.();
                 onClose();
-            } catch (error) {
-                console.error("Failed to save contact:", error);
+            } catch (err) {
+                secureError("Failed to save contact", err);
+                setError("저장에 실패했습니다. 다시 시도해주세요.");
             }
         });
     };
@@ -119,9 +151,21 @@ const AddAddress: React.FC<{
                             <Logo size={32} />
                             <Title>DearAI</Title>
                         </div>
-                        <CloseButton onClick={onClose} />
+                        <CloseButton onClick={onClose} absolute={false} />
                     </Header>
                     <form onSubmit={handleSubmit}>
+                        {error && (
+                            <div style={{
+                                color: "#e74c3c",
+                                fontSize: "0.85rem",
+                                marginBottom: "12px",
+                                padding: "8px",
+                                backgroundColor: "#fdeaea",
+                                borderRadius: "4px",
+                            }}>
+                                {error}
+                            </div>
+                        )}
                         <FormRow>
                             <Label htmlFor="group">그룹</Label>
                             <Input

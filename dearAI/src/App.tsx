@@ -22,13 +22,17 @@ import Login from "./components/Login";
 import Modal from "./components/Modal";
 import Address from "./components/Address";
 import Filter from "./components/Filter";
+import { isValidToken, secureLog } from "./utils/security";
 
 const App = () => {
     const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
 
     useEffect(() => {
         chrome.storage.local.get(["accessToken"], (result) => {
-            setIsLoggedIn(!!result.accessToken);
+            // 토큰 존재 여부만 체크하던 것을 토큰 유효성까지 검증
+            const tokenValid = isValidToken(result.accessToken);
+            setIsLoggedIn(tokenValid);
+            secureLog(`Auth check: ${tokenValid ? 'valid' : 'invalid'}`);
         });
     }, []);
 

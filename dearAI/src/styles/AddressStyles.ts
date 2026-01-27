@@ -4,10 +4,10 @@ export const ModalContainer = styled.div`
     background: white;
     box-shadow: none;
     border-radius: 16px;
-    width: 98%;
+    width: 100%;
     max-width: 1000px;
     font-family: "Pretendard", sans-serif;
-    height: 600px;
+    height: 596px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     position: relative;
     margin: 0 auto;
@@ -130,7 +130,7 @@ export const TopBar = styled.div`
 
 export const SearchInput = styled.input`
     padding: 5px 8px;
-    border-radius: 10px 0 0 10px;
+    border-radius: 10px;
     border: 1px solid rgba(0, 0, 0, 0.1);
     font-family: "Pretendard", sans-serif;
     font-size: 0.7rem;
@@ -179,7 +179,7 @@ export const AddButton = styled.button`
 `;
 
 export const HeaderBar = styled.div`
-    width: 100%;
+    width: 93%;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -204,9 +204,8 @@ export const CloseButton = styled.button`
 `;
 
 export const AddressHeaderBar = styled.div`
-    width: 100%;
     background-color: #82e0bb;
-    padding: 12px 20px;
+    padding: 12px 12px;
     display: flex;
     justify-content: space-between;
     align-items: center;

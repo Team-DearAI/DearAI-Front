@@ -22,6 +22,18 @@ declare const chrome: {
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
+import {
+    secureLog,
+    secureError,
+    isValidKeyword,
+    isValidToken,
+    debounce,
+    isSafeInput,
+    validateKeywordsResponse,
+    validateMailReviewResponse,
+    getSecureStorageValue,
+    API_BASE_URL,
+} from "../utils/security";
 import Logo from "./Logo";
 import CloseButton from "./CloseButton";
 import Tooltip from "./Tooltip";
@@ -92,13 +104,17 @@ export const Modal: React.FC = () => {
     // 컴포넌트 마운트 시 및 location 변경 시 저장된 내용 불러오기
     React.useEffect(() => {
         chrome.storage.local.get(['draftRecipient', 'draftMailContent']).then((result) => {
-            if (result.draftRecipient) {
-                setRecipient(result.draftRecipient);
-                console.log('[Modal] 저장된 받는 사람 불러옴:', result.draftRecipient);
+            // Storage 데이터 안전하게 가져오기
+            const savedRecipient = getSecureStorageValue(result.draftRecipient);
+            const savedMailContent = getSecureStorageValue(result.draftMailContent);
+
+            if (savedRecipient) {
+                setRecipient(savedRecipient);
+                secureLog('Draft recipient loaded');
             }
-            if (result.draftMailContent) {
-                setMailContent(result.draftMailContent);
-                console.log('[Modal] 저장된 메일 내용 불러옴:', result.draftMailContent.substring(0, 50));
+            if (savedMailContent) {
+                setMailContent(savedMailContent);
+                secureLog('Draft mail content loaded');
             }
         });
     }, [location]);
@@ -110,21 +126,27 @@ export const Modal: React.FC = () => {
                 const tokenData = await chrome.storage.local.get("accessToken");
                 const accessToken = tokenData.accessToken;
 
-                if (!accessToken) {
-                    console.log('[Modal] AccessToken 없음 - 제외 키워드 불러오기 건너뜀');
+                if (!isValidToken(accessToken)) {
+                    secureLog('No valid token - skipping keyword fetch');
                     return;
                 }
 
-                const res = await axios.get("https://dearai.cspark.my/filter/keywords", {
+                const res = await axios.get(`${API_BASE_URL}/filter/keywords`, {
                     headers: {
                         Authorization: `Bearer ${accessToken}`,
                     },
                 });
 
+                // API 응답 검증
+                if (!validateKeywordsResponse(res.data)) {
+                    secureError('Invalid keywords response format');
+                    return;
+                }
+
                 setExcludedKeywords(res.data.filter_keywords || []);
-                console.log("📥 [Modal] 제외 키워드 불러오기 성공:", res.data.filter_keywords);
+                secureLog('Filter keywords loaded');
             } catch (err) {
-                console.error("❌ [Modal] 제외 키워드 불러오기 실패:", err);
+                secureError('Failed to load filter keywords', err);
             }
         };
 
@@ -132,23 +154,36 @@ export const Modal: React.FC = () => {
     }, []);
 
 
-    // 받는 사람이 변경될 때마다 자동 저장
+    // Debounced 저장 함수들
+    const debouncedSaveRecipient = React.useMemo(
+        () => debounce((value: string) => {
+            chrome.storage.local.set({ draftRecipient: value });
+            secureLog('Draft recipient saved');
+        }, 500),
+        []
+    );
+
+    const debouncedSaveMailContent = React.useMemo(
+        () => debounce((value: string) => {
+            chrome.storage.local.set({ draftMailContent: value });
+            secureLog('Draft mail content saved');
+        }, 500),
+        []
+    );
+
+    // 받는 사람이 변경될 때마다 자동 저장 (debounced)
     React.useEffect(() => {
         if (recipient) {
-            chrome.storage.local.set({ draftRecipient: recipient }).then(() => {
-                console.log('[Modal] 받는 사람 자동 저장:', recipient);
-            });
+            debouncedSaveRecipient(recipient);
         }
-    }, [recipient]);
+    }, [recipient, debouncedSaveRecipient]);
 
-    // 메일 내용이 변경될 때마다 자동 저장
+    // 메일 내용이 변경될 때마다 자동 저장 (debounced)
     React.useEffect(() => {
         if (mailContent) {
-            chrome.storage.local.set({ draftMailContent: mailContent }).then(() => {
-                console.log('[Modal] 메일 내용 자동 저장:', mailContent.substring(0, 50));
-            });
+            debouncedSaveMailContent(mailContent);
         }
-    }, [mailContent]);
+    }, [mailContent, debouncedSaveMailContent]);
 
     // Optional: Reset click count after a short timeout
     React.useEffect(() => {
@@ -169,28 +204,24 @@ export const Modal: React.FC = () => {
 
     // 네이버 메일 화면에서 받는 사람 정보와 메일 내용 불러오기
     const handleLoadRecipient = () => {
-        console.log("[Modal] Sending getRecipient message to background");
+        secureLog("Loading recipient from mail");
 
         chrome.runtime.sendMessage(
             { action: "getRecipient" },
             (response) => {
-                console.log("[Modal] Response from background:", response);
-
                 if (response?.success) {
                     if (response.recipient) {
                         setRecipient(response.recipient);
-                        console.log("받는 사람 불러오기 성공:", response.recipient);
+                        secureLog("Recipient loaded successfully");
                     }
                     if (response.content) {
                         setMailContent(response.content);
-                        console.log("메일 내용 불러오기 성공:", response.content.substring(0, 100));
+                        secureLog("Mail content loaded successfully");
                     }
-                    // 성공 시 자동으로 입력창에 채워짐
                 } else {
                     const errorMsg = response?.error || "받는 사람 정보를 찾을 수 없습니다.";
-                    console.error("불러오기 실패:", errorMsg);
+                    secureError("Failed to load recipient", errorMsg);
 
-                    // 에러 모달 표시
                     setErrorModal({
                         isVisible: true,
                         message: getErrorMessage(errorMsg),
@@ -223,6 +254,23 @@ export const Modal: React.FC = () => {
             return;
         }
 
+        if (!isValidKeyword(newKeyword)) {
+            setErrorModal({
+                isVisible: true,
+                message: "키워드는 1~50자 이내로 입력해주세요!",
+            });
+            return;
+        }
+
+        // 보안 검증: XSS, SQL Injection 패턴 감지
+        if (!isSafeInput(newKeyword, 50)) {
+            setErrorModal({
+                isVisible: true,
+                message: "유효하지 않은 키워드입니다!\n특수문자를 확인해주세요.",
+            });
+            return;
+        }
+
         if (excludedKeywords.includes(newKeyword.trim())) {
             setErrorModal({
                 isVisible: true,
@@ -235,7 +283,7 @@ export const Modal: React.FC = () => {
             const tokenData = await chrome.storage.local.get("accessToken");
             const accessToken = tokenData.accessToken;
 
-            if (!accessToken) {
+            if (!isValidToken(accessToken)) {
                 setErrorModal({
                     isVisible: true,
                     message: "로그인이 필요합니다!",
@@ -244,7 +292,7 @@ export const Modal: React.FC = () => {
             }
 
             const res = await axios.post(
-                "https://dearai.cspark.my/filter/keywords",
+                `${API_BASE_URL}/filter/keywords`,
                 {
                     filter_keywords: [newKeyword.trim()],
                 },
@@ -255,12 +303,22 @@ export const Modal: React.FC = () => {
                 }
             );
 
+            // API 응답 검증
+            if (!validateKeywordsResponse(res.data)) {
+                secureError("Invalid keywords response format");
+                setErrorModal({
+                    isVisible: true,
+                    message: "서버 응답 오류!\n다시 시도해주세요.",
+                });
+                return;
+            }
+
             setExcludedKeywords(res.data.filter_keywords || []);
             setNewKeyword("");
             setIsAddingKeyword(false);
-            console.log("✅ [Modal] 키워드 추가 성공:", res.data.filter_keywords);
+            secureLog("Keyword added successfully");
         } catch (err) {
-            console.error("❌ [Modal] 키워드 추가 실패:", err);
+            secureError("Failed to add keyword", err);
             setErrorModal({
                 isVisible: true,
                 message: "키워드 추가에 실패했습니다!\n다시 시도해주세요.",
@@ -274,7 +332,7 @@ export const Modal: React.FC = () => {
             const tokenData = await chrome.storage.local.get("accessToken");
             const accessToken = tokenData.accessToken;
 
-            if (!accessToken) {
+            if (!isValidToken(accessToken)) {
                 setErrorModal({
                     isVisible: true,
                     message: "로그인이 필요합니다!",
@@ -285,7 +343,7 @@ export const Modal: React.FC = () => {
             const updatedKeywords = excludedKeywords.filter((k) => k !== keywordToDelete);
 
             await axios.put(
-                "https://dearai.cspark.my/filter/keywords",
+                `${API_BASE_URL}/filter/keywords`,
                 {
                     filter_keywords: updatedKeywords,
                 },
@@ -297,9 +355,9 @@ export const Modal: React.FC = () => {
             );
 
             setExcludedKeywords(updatedKeywords);
-            console.log("✅ [Modal] 키워드 삭제 성공");
+            secureLog("Keyword deleted successfully");
         } catch (err) {
-            console.error("❌ [Modal] 키워드 삭제 실패:", err);
+            secureError("Failed to delete keyword", err);
             setErrorModal({
                 isVisible: true,
                 message: "키워드 삭제에 실패했습니다!\n다시 시도해주세요.",
@@ -326,7 +384,7 @@ export const Modal: React.FC = () => {
             setMailContent(historyItem.result);
             setTitle(historyItem.title);
             setGuide(historyItem.guide);
-            console.log(`[Modal] 히스토리 이동: ${newIndex + 1}/${history.length}`);
+            secureLog(`History navigation: ${newIndex + 1}/${history.length}`);
         }
     };
 
@@ -339,13 +397,13 @@ export const Modal: React.FC = () => {
             setMailContent(historyItem.result);
             setTitle(historyItem.title);
             setGuide(historyItem.guide);
-            console.log(`[Modal] 히스토리 이동: ${newIndex + 1}/${history.length}`);
+            secureLog(`History navigation: ${newIndex + 1}/${history.length}`);
         }
     };
 
     // 메일 검수 API 호출 (결과 받아오기)
     const handleGetResult = async () => {
-        console.log("[Modal] 결과 받아오기 버튼 클릭");
+        secureLog("Get result button clicked");
 
         if (!mailContent || !mailContent.trim()) {
             setErrorModal({
@@ -361,7 +419,7 @@ export const Modal: React.FC = () => {
             const tokenData = await chrome.storage.local.get("accessToken");
             const accessToken = tokenData.accessToken;
 
-            if (!accessToken) {
+            if (!isValidToken(accessToken)) {
                 setErrorModal({
                     isVisible: true,
                     message: "로그인이 필요합니다!",
@@ -370,7 +428,7 @@ export const Modal: React.FC = () => {
             }
 
             const response = await axios.post(
-                "https://dearai.cspark.my/filter/",
+                `${API_BASE_URL}/filter/`,
                 {
                     email: recipient,
                     recipient: recipient,
@@ -388,14 +446,24 @@ export const Modal: React.FC = () => {
                 }
             );
 
-            console.log("✅ [Modal] 메일 검수 결과:", response.data);
+            secureLog("Mail review completed");
+
+            // API 응답 검증
+            if (!validateMailReviewResponse(response.data)) {
+                secureError("Invalid mail review response format");
+                setErrorModal({
+                    isVisible: true,
+                    message: "서버 응답 오류!\n다시 시도해주세요.",
+                });
+                return;
+            }
 
             // 결과를 메일 내용에 반영 및 히스토리에 추가
             if (response.data.result) {
                 const result = response.data.result;
 
                 // API 응답: { mail: "...", title: "..." }
-                const mailContent = result.mail || "";
+                const resultMailContent = result.mail || "";
                 const mailTitle = result.title || "";
 
                 // 제목이 있으면 제목 필드에 설정
@@ -406,7 +474,7 @@ export const Modal: React.FC = () => {
                 // 히스토리에 추가 (mail 내용과 title 저장)
                 const newHistoryItem: HistoryItem = {
                     guide: guide,
-                    result: mailContent,
+                    result: resultMailContent,
                     title: mailTitle,
                     timestamp: new Date(),
                 };
@@ -419,13 +487,11 @@ export const Modal: React.FC = () => {
                 });
 
                 // 메일 내용 덮어쓰기
-                setMailContent(mailContent);
-                console.log("✅ [Modal] 검수 결과 히스토리 저장 완료");
-                console.log("  - 제목:", mailTitle);
-                console.log("  - 내용:", mailContent.substring(0, 50) + "...");
+                setMailContent(resultMailContent);
+                secureLog("Review result saved to history");
             }
         } catch (err) {
-            console.error("❌ [Modal] 메일 검수 실패:", err);
+            secureError("Mail review failed", err);
             setErrorModal({
                 isVisible: true,
                 message: "메일 검수에 실패했습니다!\n다시 시도해주세요.",
@@ -437,8 +503,7 @@ export const Modal: React.FC = () => {
 
     // 최종 적용 - 익스텐션 내용을 메일 화면에 적용
     const handleApplyContent = () => {
-        console.log("[Modal] 최종 적용 버튼 클릭");
-        console.log("[Modal] 적용할 내용:", mailContent);
+        secureLog("Apply content button clicked");
 
         if (!mailContent || !mailContent.trim()) {
             setErrorModal({
@@ -451,13 +516,11 @@ export const Modal: React.FC = () => {
         chrome.runtime.sendMessage(
             { action: "applyContent", content: mailContent },
             (response) => {
-                console.log("[Modal] Response from background:", response);
-
                 if (response?.success) {
-                    console.log("✅ 메일 내용 적용 성공!");
+                    secureLog("Content applied successfully");
                 } else {
                     const errorMsg = response?.error || "메일 편집기를 찾을 수 없습니다.";
-                    console.error("❌ 적용 실패:", errorMsg);
+                    secureError("Failed to apply content", errorMsg);
 
                     setErrorModal({
                         isVisible: true,
@@ -486,9 +549,7 @@ export const Modal: React.FC = () => {
                                 if (newCount >= 4) {
                                     if (chrome?.storage?.local) {
                                         chrome.storage.local.clear().then(() => {
-                                            console.log(
-                                                "Logged out via logo clicks"
-                                            );
+                                            secureLog("Logged out via logo clicks");
                                             window.location.reload();
                                         });
                                     }
