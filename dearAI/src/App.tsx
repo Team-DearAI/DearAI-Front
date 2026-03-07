@@ -14,6 +14,20 @@ declare const chrome: {
                 callback?: () => void
             ) => void;
         };
+        onChanged: {
+            addListener: (
+                callback: (
+                    changes: { [key: string]: { oldValue?: string; newValue?: string } },
+                    areaName: string
+                ) => void
+            ) => void;
+            removeListener: (
+                callback: (
+                    changes: { [key: string]: { oldValue?: string; newValue?: string } },
+                    areaName: string
+                ) => void
+            ) => void;
+        };
     };
 };
 import { HashRouter, Routes, Route } from "react-router-dom";
@@ -28,12 +42,31 @@ const App = () => {
     const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
 
     useEffect(() => {
+        // 초기 토큰 체크
         chrome.storage.local.get(["accessToken"], (result) => {
-            // 토큰 존재 여부만 체크하던 것을 토큰 유효성까지 검증
             const tokenValid = isValidToken(result.accessToken);
             setIsLoggedIn(tokenValid);
             secureLog(`Auth check: ${tokenValid ? 'valid' : 'invalid'}`);
         });
+
+        // 스토리지 변경 감지 (로그인 완료 시 자동 전환)
+        const handleStorageChange = (
+            changes: { [key: string]: { oldValue?: string; newValue?: string } },
+            areaName: string
+        ) => {
+            if (areaName === 'local' && changes.accessToken) {
+                const newToken = changes.accessToken.newValue;
+                const tokenValid = isValidToken(newToken);
+                secureLog(`Token changed: ${tokenValid ? 'valid' : 'invalid'}`);
+                setIsLoggedIn(tokenValid);
+            }
+        };
+
+        chrome.storage.onChanged.addListener(handleStorageChange);
+
+        return () => {
+            chrome.storage.onChanged.removeListener(handleStorageChange);
+        };
     }, []);
 
     if (isLoggedIn === null) return <div>Loading...</div>;
