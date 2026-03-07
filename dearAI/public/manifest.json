@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "DearAI",
-    "version": "1.0",
+    "version": "1.1",
     "description": "AI 메일 어시스턴트",
     "minimum_chrome_version": "88",
     "action": {

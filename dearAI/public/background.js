@@ -74,6 +74,20 @@ function loginWithGoogle() {
                 if (accessToken) {
                     chrome.storage.local.set({ accessToken, refreshToken }, () => {
                         console.log("Tokens saved:", { accessToken, refreshToken });
+
+                        // 로그인 완료 후 팝업 자동으로 열기
+                        chrome.action.openPopup().then(() => {
+                            console.log("[BG] Popup opened after login");
+                        }).catch((err) => {
+                            console.log("[BG] Could not open popup automatically:", err);
+                            // 자동 열기 실패 시 사용자에게 알림
+                            chrome.action.setBadgeText({ text: "✓" });
+                            chrome.action.setBadgeBackgroundColor({ color: "#4CAF50" });
+                            // 3초 후 배지 제거
+                            setTimeout(() => {
+                                chrome.action.setBadgeText({ text: "" });
+                            }, 3000);
+                        });
                     });
                 } else {
                     console.warn("No tokens found in redirect:", redirectUrl);

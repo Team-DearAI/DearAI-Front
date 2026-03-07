@@ -29,6 +29,24 @@ declare const chrome: {
             ) => void;
         };
     };
+    runtime: {
+        onMessage: {
+            addListener: (
+                callback: (
+                    message: { action: string },
+                    sender: unknown,
+                    sendResponse: () => void
+                ) => void
+            ) => void;
+            removeListener: (
+                callback: (
+                    message: { action: string },
+                    sender: unknown,
+                    sendResponse: () => void
+                ) => void
+            ) => void;
+        };
+    };
 };
 import { HashRouter, Routes, Route } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -62,10 +80,25 @@ const App = () => {
             }
         };
 
+        // background.js에서 로그인 완료 메시지 수신
+        const handleMessage = (message: { action: string }) => {
+            if (message.action === 'loginComplete') {
+                secureLog('Login complete message received');
+                // 토큰 다시 확인하여 상태 업데이트
+                chrome.storage.local.get(["accessToken"], (result) => {
+                    const tokenValid = isValidToken(result.accessToken);
+                    secureLog(`Token recheck after login: ${tokenValid ? 'valid' : 'invalid'}`);
+                    setIsLoggedIn(tokenValid);
+                });
+            }
+        };
+
         chrome.storage.onChanged.addListener(handleStorageChange);
+        chrome.runtime.onMessage.addListener(handleMessage);
 
         return () => {
             chrome.storage.onChanged.removeListener(handleStorageChange);
+            chrome.runtime.onMessage.removeListener(handleMessage);
         };
     }, []);
 
